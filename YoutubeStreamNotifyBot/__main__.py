@@ -9,9 +9,9 @@ from typing import Callable
 
 from loguru import logger
 
-from PushMethod import verify_methods
-from youtube_api_client import build_client, YoutubeClient, LiveBroadcast
-from discord_report import report_closure
+from .PushMethod import verify_methods
+from .youtube_api_client import build_client, YoutubeClient, LiveBroadcast
+from .discord_report import report_closure
 
 
 ROOT = pathlib.Path(__file__).parent.absolute()

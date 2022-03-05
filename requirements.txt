@@ -1,0 +1,7 @@
+requests
+loguru
+tweepy
+discord-webhook
+python-telegram-bot
+google-api-python-client
+python-dateutil

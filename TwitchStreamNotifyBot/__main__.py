@@ -9,9 +9,9 @@ from typing import Callable
 
 from loguru import logger
 
-from PushMethod import verify_methods
-from twitch_api_client import TwitchClient
-from discord_report import report_closure
+from .PushMethod import verify_methods
+from .twitch_api_client import TwitchClient
+from .discord_report import report_closure
 
 ROOT = pathlib.Path(__file__).parent.absolute()
 USE_GET_STREAM = True
