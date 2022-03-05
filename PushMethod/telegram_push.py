@@ -1,4 +1,3 @@
-from typing import TYPE_CHECKING
 from typing import Union
 import traceback
 
@@ -6,9 +5,6 @@ from loguru import logger
 import telegram
 
 from .base import Push
-
-if TYPE_CHECKING:
-    from YoutubeStreamNotifyBot.youtube_api_client import LiveBroadcast
 
 
 class TelegramPush(Push):
@@ -61,9 +57,11 @@ class TelegramPush(Push):
             len(self.chat_ids),
         )
 
-    def send(self, channel_object: "LiveBroadcast"):
+    def send(self, channel_object, **kwargs):
 
         dict_ = channel_object.as_dict()
+        dict_.update(kwargs)
+
         text = self.content.format(**dict_)
 
         for chat_id in self.chat_ids:

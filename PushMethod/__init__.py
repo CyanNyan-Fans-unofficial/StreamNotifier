@@ -3,6 +3,7 @@ import traceback
 from loguru import logger
 
 from . import discord_push, telegram_push, twitter_push
+from .discord_report import report_closure
 
 
 modules = discord_push.DiscordPush, telegram_push.TelegramPush, twitter_push.TwitterPush

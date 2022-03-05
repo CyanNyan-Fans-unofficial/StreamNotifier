@@ -9,9 +9,8 @@ from typing import Callable
 
 from loguru import logger
 
-from .PushMethod import verify_methods
+from PushMethod import verify_methods, report_closure
 from .twitch_api_client import TwitchClient
-from .discord_report import report_closure
 
 ROOT = pathlib.Path(__file__).parent.absolute()
 USE_GET_STREAM = True
@@ -93,7 +92,7 @@ class RequestInstance:
                     })
 
                     self.notified.write(output.started_at)
-                    self.callback(f"https://twitch.tv/{self.channel_name}", output)
+                    self.callback(output, link=f"https://twitch.tv/{self.channel_name}")
 
             time.sleep(INTERVAL)
 
@@ -116,7 +115,7 @@ def callback_notify_closure(notify_callbacks):
     if test:
         logger.warning("Test mode enabled, will not push to platforms")
 
-    def inner(content, channel_object):
+    def inner(channel_object, **kwargs):
         logger.info("Notifier callback started.")
         for callback in notify_callbacks:
 
@@ -127,7 +126,7 @@ def callback_notify_closure(notify_callbacks):
                 logger.info("Pushing for {}", type(callback).__name__)
 
             try:
-                callback.send(content, channel_object)
+                callback.send(channel_object, **kwargs)
             except Exception:
                 traceback.print_exc()
 
@@ -140,7 +139,7 @@ def main(config):
     client_id = config["polling api"]["twitch app id"]
     client_secret = config["polling api"]["twitch app secret"]
 
-    report = report_closure(config)
+    report = report_closure(config, discord_embed_color='a364fe')
 
     client = TwitchClient(client_id, client_secret)
 

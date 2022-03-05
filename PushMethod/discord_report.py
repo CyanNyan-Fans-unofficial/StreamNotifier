@@ -2,15 +2,17 @@
 Reports status to discord
 """
 import traceback
-from typing import Union, Dict
+from typing import Optional, Union, Dict
 
 import requests
 from loguru import logger
 from discord_webhook import DiscordWebhook, DiscordEmbed
 
 
-def report_closure(config: dict):
+def report_closure(config: dict, discord_embed_color: Optional[str] = None):
     output = None
+    embed_color = discord_embed_color
+
     try:
         # verify webhook URL
         webhook_url = config["discord_report_webhook"]
@@ -32,11 +34,9 @@ def report_closure(config: dict):
     else:
         # return report if complete
 
-        def report(title="StreamNotifier Status", desc="", fields: Union[Dict[str, str], None] = None):
-            embed = DiscordEmbed(title=title, color='a364fe')
+        def report(title="StreamNotifier Status", desc=None, fields: Union[Dict[str, str], None] = None):
+            embed = DiscordEmbed(title=title, description=desc, color=embed_color)
             embed.set_timestamp()
-            if desc:
-                embed.description = desc
 
             if fields:
                 try:

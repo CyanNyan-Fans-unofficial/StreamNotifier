@@ -1,4 +1,3 @@
-from typing import TYPE_CHECKING
 from pprint import pformat
 
 from loguru import logger
@@ -6,9 +5,6 @@ from discord_webhook import DiscordWebhook
 import requests
 
 from .base import Push
-
-if TYPE_CHECKING:
-    from YoutubeStreamNotifyBot.youtube_api_client import LiveBroadcast
 
 
 class DiscordPush(Push):
@@ -35,9 +31,10 @@ class DiscordPush(Push):
 
         logger.info("Verification of discord webhook url complete.")
 
-    def send(self, channel_object: "LiveBroadcast"):
+    def send(self, channel_object, **kwargs):
 
         dict_ = channel_object.as_dict()
+        dict_.update(kwargs)
 
         DiscordWebhook(
             url=self.webhook_url,

@@ -6,9 +6,6 @@ from loguru import logger
 
 from .base import Push
 
-if TYPE_CHECKING:
-    from TwitchStreamNotifyBot.twitch_api_client import TwitchChannel
-
 
 class TwitterPush(Push):
     def __init__(self, config: dict):
@@ -42,10 +39,10 @@ class TwitterPush(Push):
 
         logger.info("Twitch auth complete.")
 
-    def send(self, link, channel_object: "TwitchChannel"):
+    def send(self, channel_object, **kwargs):
 
         dict_ = channel_object.as_dict()
-        dict_["link"] = link
+        dict_.update(kwargs)
 
         self.api.update_status(self.content.format(**dict_))
 

@@ -9,7 +9,7 @@ from typing import Callable
 
 from loguru import logger
 
-from .PushMethod import verify_methods
+from PushMethod import verify_methods, report_closure
 from .youtube_api_client import build_client, YoutubeClient, LiveBroadcast
 from .discord_report import report_closure
 
@@ -112,7 +112,7 @@ def main(config):
     # read config meow
     client_secret = config["client_secret"]
 
-    report = report_closure(config)
+    report = report_closure(config, discord_embed_color='ff0000')
 
     client = build_client(client_secret=client_secret, token_dir=TOKEN_PATH, console=not LOCAL_TESTING)
 
