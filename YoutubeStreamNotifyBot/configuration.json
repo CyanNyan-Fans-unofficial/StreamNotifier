@@ -1,5 +1,5 @@
 {
-  "client secret file path": "client_secret.json",
+  "client_secret": "",
 
   "discord_report_webhook": "",
 

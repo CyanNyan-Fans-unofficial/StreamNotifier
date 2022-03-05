@@ -5,3 +5,4 @@ discord-webhook
 python-telegram-bot
 google-api-python-client
 python-dateutil
+google_auth_oauthlib

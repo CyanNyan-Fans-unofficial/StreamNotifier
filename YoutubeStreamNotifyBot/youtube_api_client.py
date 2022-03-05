@@ -6,6 +6,7 @@ You can manually specify it when building resource file.
 Readability is 'amazing', even I can't read well. Will add docstrings when I can.
 """
 import inspect
+import json
 import os
 import pathlib
 import datetime
@@ -29,7 +30,7 @@ API_VERSION = "v3"
 
 def build_client(
     api_key=None,
-    client_secret_dir=None,
+    client_secret=None,
     token_dir=None,
     console=False,
     secure=True,
@@ -61,8 +62,8 @@ def build_client(
     if token_dir:
         token_dir = pathlib.Path(token_dir)
 
-    if client_secret_dir:
-        client_secret_dir = pathlib.Path(client_secret_dir)
+    if client_secret:
+        client_secret = json.loads(client_secret)
 
     credential = None
 
@@ -74,8 +75,7 @@ def build_client(
         if credential and credential.expired and credential.refresh_token:
             credential.refresh(Request())
         else:
-            file = pathlib.Path(client_secret_dir)
-            flow = InstalledAppFlow.from_client_secrets_file(file.as_posix(), scopes)
+            flow = InstalledAppFlow.from_client_config(client_secret, scopes)
 
             if console:
                 credential = flow.run_console()

@@ -107,15 +107,14 @@ def start_checking(client: YoutubeClient, callback: Callable, interval, report: 
         time.sleep(interval)
 
 
-def main():
+def main(config):
 
     # read config meow
-    config = json.loads(args.path.read_text(encoding="utf8"))
-    client_secret_dir = config["client secret file path"]
+    client_secret = config["client_secret"]
 
     report = report_closure(config)
 
-    client = build_client(client_secret_dir=client_secret_dir, token_dir=TOKEN_PATH, console=not LOCAL_TESTING)
+    client = build_client(client_secret=client_secret, token_dir=TOKEN_PATH, console=not LOCAL_TESTING)
 
     logger.info("Application successfully authorized.")
 
@@ -166,4 +165,5 @@ if __name__ == "__main__":
 
     # parsing end ===================================
 
-    main()
+    config = json.loads(args.path.read_text(encoding="utf8"))
+    main(config)
