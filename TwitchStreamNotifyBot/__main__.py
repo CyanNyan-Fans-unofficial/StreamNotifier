@@ -134,7 +134,6 @@ def callback_notify_closure(notify_callbacks):
 
 
 def main(config):
-
     channel_name = config["channel name"]
     client_id = config["polling api"]["twitch app id"]
     client_secret = config["polling api"]["twitch app secret"]
@@ -145,7 +144,7 @@ def main(config):
 
     logger.info("Target Channel: {}", channel_name)
 
-    callback_list = list(verify_methods(config))
+    callback_list = list(verify_methods(config, 'twitch'))
     names = tuple(x.__class__.__name__ for x in callback_list)
 
     logger.info("Verified {}", ", ".join(names))

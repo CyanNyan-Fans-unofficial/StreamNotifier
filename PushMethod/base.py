@@ -1,10 +1,6 @@
 """
 Unnecessary dummy ABC
 """
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from TwitchStreamNotifyBot.twitch_api_client import TwitchChannel
 
 
 # This is unnecessary, but for fun
@@ -13,6 +9,8 @@ if TYPE_CHECKING:
 class Push:
     """ABC for all push methods"""
 
-    def send(self, link, channel_object: "TwitchChannel"):
-        """Formats text with contents and sends to respective platforms."""
+    def send(self, channel_object, **kwargs):
+        """Formats text with contents and sends to respective platforms.
+
+        Additional formatting variables can be provided as keyword arguments."""
         raise NotImplementedError

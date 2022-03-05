@@ -8,11 +8,9 @@ from .base import Push
 
 
 class DiscordPush(Push):
-    def __init__(self, config: dict):
-        self.config = config["discord"]
-
-        self.webhook_url = self.config["webhook url"]
-        self.content = self.config["content"]
+    def __init__(self, config: dict, content: str):
+        self.webhook_url = config["webhook url"]
+        self.content = content
 
         self._verify()
 

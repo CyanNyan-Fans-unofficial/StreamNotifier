@@ -8,12 +8,10 @@ from .base import Push
 
 
 class TelegramPush(Push):
-    def __init__(self, config: dict):
-        self.config = config["telegram"]
-
-        self.token = self.config["token"]
-        self.chat_ids = self.config["chat id"]
-        self.content = self.config["content"]
+    def __init__(self, config: dict, content: str):
+        self.token = config["token"]
+        self.chat_ids = config["chat id"]
+        self.content = content
 
         self.bot: Union[None, telegram.Bot] = None
 

@@ -118,7 +118,7 @@ def main(config):
 
     logger.info("Application successfully authorized.")
 
-    callback_list = list(verify_methods(config))
+    callback_list = list(verify_methods(config, 'youtube'))
     names = tuple(x.__class__.__name__ for x in callback_list)
 
     logger.info("Verified {}", ", ".join(names))

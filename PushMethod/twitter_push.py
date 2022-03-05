@@ -8,16 +8,14 @@ from .base import Push
 
 
 class TwitterPush(Push):
-    def __init__(self, config: dict):
-        self.config = config["twitter"]
+    def __init__(self, config: dict, content: str):
+        self.content: str = content
 
-        self.content: str = self.config["content"]
+        self.api_key = config["api key"]
+        self.api_secret = config["api secret key"]
 
-        self.api_key = self.config["api key"]
-        self.api_secret = self.config["api secret key"]
-
-        self.token = self.config["access token"]
-        self.token_secret = self.config["access token secret"]
+        self.token = config["access token"]
+        self.token_secret = config["access token secret"]
 
         self.api: Union[None, tweepy.API] = None
 
