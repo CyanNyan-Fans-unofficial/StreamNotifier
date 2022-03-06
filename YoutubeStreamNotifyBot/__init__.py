@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+from time import time
 import traceback
 import pathlib
 import asyncio
@@ -7,8 +8,8 @@ from typing import Callable
 
 from loguru import logger
 
-from PushMethod import verify_methods, report_closure
-from .youtube_api_client import build_client, YoutubeClient, LiveBroadcast
+from PushMethod import report_closure, callback_notify_closure
+from .youtube_api_client import build_client, YoutubeClient
 
 
 ROOT = pathlib.Path(__file__).parent.absolute()
@@ -30,28 +31,6 @@ class Notified:
 
     def __contains__(self, item):
         return item in self.last_notified
-
-
-def callback_notify_closure(notify_callbacks, test_mode):
-    if test_mode:
-        logger.warning("Test mode enabled, will not push to platforms")
-
-    def inner(channel_object: LiveBroadcast):
-        logger.info("Notifier callback started for stream {}", channel_object)
-        for callback in notify_callbacks:
-
-            if test_mode:
-                logger.info("Test mod, skipping {}", type(callback).__name__)
-                continue
-            else:
-                logger.info("Pushing for {}", type(callback).__name__)
-
-            try:
-                callback.send(channel_object)
-            except Exception:
-                traceback.print_exc()
-
-    return inner
 
 
 async def start_checking(client: YoutubeClient, callback: Callable, interval, report: Callable, cache_file: pathlib.Path):
@@ -97,30 +76,28 @@ async def start_checking(client: YoutubeClient, callback: Callable, interval, re
                 notified.write(stream.id)
 
                 if stream.privacy_status != "private":
-                    callback(stream)
+                    callback(**stream.as_dict())
 
         await asyncio.sleep(interval)
 
 
-async def main(config, push_methods, push_contents: dict[str, str], cache_path: str, test_mode=False):
-
+async def main(config, notify_callbacks: dict, cache_path: str, test_mode=False):
     # read config meow
     client_secret = config["client_secret"]
+    push_contents = config['push contents']
 
-    report = report_closure(config, discord_embed_color='ff0000')
+    report_list = config.get('report', [])
+    report = report_closure((notify_callbacks[x] for x in report_list if x in notify_callbacks), color='ff0000')
 
     client = build_client(client_secret=client_secret, token_dir=TOKEN_PATH, console=not LOCAL_TESTING)
 
     logger.info("Application successfully authorized.")
 
-    callback_list = list(verify_methods(push_methods, push_contents))
-    names = tuple(x.__class__.__name__ for x in callback_list)
+    push_callbacks = {name: notify_callbacks[name] for name in notify_callbacks.keys() & push_contents.keys()}
+    callback_unified = callback_notify_closure(push_callbacks, push_contents, test_mode)
+    names = (f'{callback.__class__.__name__}: {name}' for name, callback in push_callbacks.items())
 
-    logger.info("Verified {}", ", ".join(names))
-
-    callback_unified = callback_notify_closure(callback_list, test_mode)
-
-    report(title="Notifier Started", fields={
+    report(title="YouTube Notifier Started", fields={
         "Active Push Destination": "\n".join(names)
     })
 

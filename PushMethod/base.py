@@ -9,7 +9,7 @@ Unnecessary dummy ABC
 class Push:
     """ABC for all push methods"""
 
-    def send(self, channel_object, **kwargs):
+    def send(self, content):
         """Formats text with contents and sends to respective platforms.
 
         Additional formatting variables can be provided as keyword arguments."""

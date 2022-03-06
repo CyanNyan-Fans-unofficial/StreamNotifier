@@ -1,21 +1,21 @@
+import traceback
+
 from pprint import pformat
 
 from loguru import logger
-from discord_webhook import DiscordWebhook
+from discord_webhook import DiscordWebhook, DiscordEmbed
 import requests
+from typing import Union
 
 from .base import Push
 
 
 class DiscordPush(Push):
-    def __init__(self, config: dict, content: str):
+    def __init__(self, config: dict):
         self.webhook_url = config["webhook url"]
-        self.content = content
-
         self._verify()
 
     def _verify(self):
-
         if not self.webhook_url:
             logger.info("Discord webhook url empty, skipping.")
             raise ValueError("Discord webhook url empty, skipping.")
@@ -29,15 +29,32 @@ class DiscordPush(Push):
 
         logger.info("Verification of discord webhook url complete.")
 
-    def send(self, channel_object, **kwargs):
-
-        dict_ = channel_object.as_dict()
-        dict_.update(kwargs)
-
+    def send(self, content):
         DiscordWebhook(
             url=self.webhook_url,
-            content=self.content.format(**dict_),
+            content=content,
             rate_limit_retry=True,
         ).execute()
 
         logger.info("Notified to discord webhook.")
+
+    def report(self, title="StreamNotifier Status", desc=None, color=None, fields: Union[dict[str, str], None] = None):
+        embed = DiscordEmbed(title=title, description=desc, color=color)
+        embed.set_timestamp()
+
+        if fields:
+            try:
+                for title, value in fields.items():
+                    if value == "":
+                        value = None
+                    embed.add_embed_field(name=title, value=str(value))
+
+            except Exception:
+                traceback.print_exc(limit=3)
+
+        result = DiscordWebhook(self.webhook_url, embeds=[embed]).execute()
+
+        try:
+            result.raise_for_status()
+        except Exception as err:
+            traceback.print_exception(err, err, err.__traceback__)

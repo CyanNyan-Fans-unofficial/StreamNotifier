@@ -3,23 +3,21 @@ import traceback
 
 from loguru import logger
 import telegram
+from telegram.parsemode import ParseMode
 
 from .base import Push
 
 
 class TelegramPush(Push):
-    def __init__(self, config: dict, content: str):
+    def __init__(self, config: dict):
         self.token = config["token"]
         self.chat_ids = config["chat id"]
-        self.content = content
 
         self.bot: Union[None, telegram.Bot] = None
-
         self.auth()
 
     def auth(self):
-
-        if not all((self.token, self.chat_ids, self.content)):
+        if not all((self.token, self.chat_ids)):
             logger.info("One or more Telegram parameters are empty, skipping.")
             raise ValueError("One or more Telegram parameters are empty, skipping.")
 
@@ -55,17 +53,11 @@ class TelegramPush(Push):
             len(self.chat_ids),
         )
 
-    def send(self, channel_object, **kwargs):
-
-        dict_ = channel_object.as_dict()
-        dict_.update(kwargs)
-
-        text = self.content.format(**dict_)
-
+    def send(self, content):
         for chat_id in self.chat_ids:
             try:
                 message: telegram.Message = self.bot.send_message(
-                    chat_id=chat_id, text=text
+                    chat_id=chat_id, text=content
                 )
             except Exception:
                 traceback.print_exc()
@@ -79,3 +71,26 @@ class TelegramPush(Push):
                     logger.info(
                         "Not enough permission to pin on telegram channel {}.", chat_id
                     )
+
+    def report(self, title="StreamNotifier Status", desc=None, color=None, fields: Union[dict[str, str], None] = None):
+        message = []
+
+        if title:
+            message.extend([f'<b>{title}</b>', ''])
+
+        if desc:
+            message.extend([desc, ''])
+
+        if fields:
+            for title, value in fields.items():
+                if title:
+                    message.append(f'<b>{title}</b>')
+                if value:
+                    message.append(value)
+                message.append('')
+
+        for chat_id in self.chat_ids:
+            try:
+                self.bot.send_message(chat_id, '\n'.join(message), parse_mode=ParseMode.HTML)
+            except Exception as err:
+                traceback.print_exception(err, err, err.__traceback__)

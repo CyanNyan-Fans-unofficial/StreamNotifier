@@ -7,7 +7,7 @@ from typing import Callable
 
 from loguru import logger
 
-from PushMethod import verify_methods, report_closure
+from PushMethod import report_closure, callback_notify_closure
 from .twitch_api_client import TwitchClient
 
 ROOT = pathlib.Path(__file__).parent.absolute()
@@ -89,7 +89,7 @@ class RequestInstance:
                     })
 
                     self.notified.write(output.started_at)
-                    self.callback(output, link=f"https://twitch.tv/{self.channel_name}")
+                    self.callback(**output.as_dict(), link=f"https://twitch.tv/{self.channel_name}")
 
             await asyncio.sleep(INTERVAL)
 
@@ -106,51 +106,28 @@ class RequestInstance:
         #         time.sleep(2)
 
 
-def callback_notify_closure(notify_callbacks, test_mode=False):
-    if test_mode:
-        logger.warning("Test mode enabled, will not push to platforms")
-
-    def inner(channel_object, **kwargs):
-        logger.info("Notifier callback started.")
-        for callback in notify_callbacks:
-
-            if test_mode:
-                logger.info("Test mod, skipping {}", type(callback).__name__)
-                continue
-            else:
-                logger.info("Pushing for {}", type(callback).__name__)
-
-            try:
-                callback.send(channel_object, **kwargs)
-            except Exception:
-                traceback.print_exc()
-
-    return inner
-
-
-async def main(config, push_methods, push_contents, cache_path: str, test_mode=False):
+async def main(config, notify_callbacks: dict, cache_path: str, test_mode=False):
     cache_path = cache_path
 
     channel_name = config["channel name"]
     client_id = config["polling api"]["twitch app id"]
     client_secret = config["polling api"]["twitch app secret"]
+    push_contents = config['push contents']
 
-    report = report_closure(config, discord_embed_color='a364fe')
+    report_list = config.get('report', [])
+    report = report_closure((notify_callbacks[x] for x in report_list if x in notify_callbacks), color='a364fe')
 
     client = TwitchClient(client_id, client_secret)
 
     logger.info("Target Channel: {}", channel_name)
 
-    callback_list = list(verify_methods(push_methods, push_contents))
-    names = tuple(x.__class__.__name__ for x in callback_list)
-
-    logger.info("Verified {}", ", ".join(names))
-
-    callback_unified = callback_notify_closure(callback_list, test_mode)
+    push_callbacks = {name: notify_callbacks[name] for name in notify_callbacks.keys() & push_contents.keys()}
+    callback_unified = callback_notify_closure(push_callbacks, push_contents, test_mode)
+    names = (f'{callback.__class__.__name__}: {name}' for name, callback in push_callbacks.items())
 
     req_instance = RequestInstance(client, channel_name, callback_unified, report, pathlib.Path(cache_path))
 
-    report(title="Notifier Started", fields={
+    report(title="Twitch Notifier Started", fields={
         "Target": channel_name,
         "Active Push Destination": "\n".join(names)
     })
