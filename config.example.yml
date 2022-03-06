@@ -14,6 +14,9 @@ push methods:
     bearer token: Unused for now
     access token:
     access token secret:
+  report:
+    type: discord
+    webhook url:
 
 twitch:
   type: twitch
@@ -21,7 +24,8 @@ twitch:
   polling api:
     twitch app id:
     twitch app secret:
-  discord_report_webhook:
+  report:
+    - report
   push contents:
     discord: |-
       <@&discord_role_id> Live now! {}
@@ -41,7 +45,8 @@ twitch:
 youtube:
   type: youtube
   client_secret:
-  discord_report_webhook:
+  report:
+    - report
   push contents:
     discord: |-
       <@&discord_role_id> Live now! {}
