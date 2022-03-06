@@ -1,9 +1,8 @@
 #!/usr/bin/python3
 
-from functools import cache
-import time
 import traceback
 import pathlib
+import asyncio
 from typing import Callable
 
 from loguru import logger
@@ -55,7 +54,7 @@ def callback_notify_closure(notify_callbacks, test_mode):
     return inner
 
 
-def start_checking(client: YoutubeClient, callback: Callable, interval, report: Callable, cache_file: pathlib.Path):
+async def start_checking(client: YoutubeClient, callback: Callable, interval, report: Callable, cache_file: pathlib.Path):
     notified = Notified(cache_file)
 
     logger.info("Started polling for streams, interval: {}", interval)
@@ -100,10 +99,10 @@ def start_checking(client: YoutubeClient, callback: Callable, interval, report: 
                 if stream.privacy_status != "private":
                     callback(stream)
 
-        time.sleep(interval)
+        await asyncio.sleep(interval)
 
 
-def main(config, cache_path: str, test_mode=False):
+async def main(config, push_methods, push_contents: dict[str, str], cache_path: str, test_mode=False):
 
     # read config meow
     client_secret = config["client_secret"]
@@ -114,7 +113,7 @@ def main(config, cache_path: str, test_mode=False):
 
     logger.info("Application successfully authorized.")
 
-    callback_list = list(verify_methods(config, 'youtube'))
+    callback_list = list(verify_methods(push_methods, push_contents))
     names = tuple(x.__class__.__name__ for x in callback_list)
 
     logger.info("Verified {}", ", ".join(names))
@@ -125,4 +124,4 @@ def main(config, cache_path: str, test_mode=False):
         "Active Push Destination": "\n".join(names)
     })
 
-    start_checking(client, callback_unified, INTERVAL, report, pathlib.Path(cache_path))
+    await start_checking(client, callback_unified, INTERVAL, report, pathlib.Path(cache_path))

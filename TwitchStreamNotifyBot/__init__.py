@@ -2,7 +2,7 @@
 
 import traceback
 import pathlib
-import time
+import asyncio
 from typing import Callable
 
 from loguru import logger
@@ -38,7 +38,7 @@ class RequestInstance:
         self.callback = callback
         self.report = report
 
-    def start_checking(self):
+    async def start_checking(self):
 
         user = self.client.get_user(self.channel_name)
 
@@ -91,7 +91,7 @@ class RequestInstance:
                     self.notified.write(output.started_at)
                     self.callback(output, link=f"https://twitch.tv/{self.channel_name}")
 
-            time.sleep(INTERVAL)
+            await asyncio.sleep(INTERVAL)
 
         # else:
         #     while True:
@@ -128,7 +128,7 @@ def callback_notify_closure(notify_callbacks, test_mode=False):
     return inner
 
 
-def main(config, cache_path: str, test_mode=False):
+async def main(config, push_methods, push_contents, cache_path: str, test_mode=False):
     cache_path = cache_path
 
     channel_name = config["channel name"]
@@ -141,7 +141,7 @@ def main(config, cache_path: str, test_mode=False):
 
     logger.info("Target Channel: {}", channel_name)
 
-    callback_list = list(verify_methods(config, 'twitch'))
+    callback_list = list(verify_methods(push_methods, push_contents))
     names = tuple(x.__class__.__name__ for x in callback_list)
 
     logger.info("Verified {}", ", ".join(names))
@@ -155,4 +155,4 @@ def main(config, cache_path: str, test_mode=False):
         "Active Push Destination": "\n".join(names)
     })
 
-    req_instance.start_checking()
+    await req_instance.start_checking()

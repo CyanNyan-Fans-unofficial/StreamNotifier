@@ -3,7 +3,6 @@ import traceback
 from loguru import logger
 
 from . import discord_push, telegram_push, twitter_push
-from .discord_report import report_closure
 
 
 modules = {
@@ -13,11 +12,8 @@ modules = {
 }
 
 
-def verify_methods(config: dict, service: str):
-    push_config = config["push methods"]
-    push_contents = config[service]["push contents"]
-
-    for name, push_method_config in push_config.items():
+def verify_methods(config: dict, push_contents: dict[str, str]):
+    for name, push_method_config in config.items():
         content = push_contents.get(name)
 
         # If content is not set, disable such push method

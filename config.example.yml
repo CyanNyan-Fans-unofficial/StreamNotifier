@@ -1,0 +1,59 @@
+push methods:
+  discord:
+    type: discord
+    webhook url:
+  telegram:
+    type: telegram
+    token:
+    chat id:
+      -
+  twitter:
+    type: twitter
+    api key:
+    api secret key:
+    bearer token: Unused for now
+    access token:
+    access token secret:
+
+twitch:
+  type: twitch
+  channel name:
+  polling api:
+    twitch app id:
+    twitch app secret:
+  discord_report_webhook:
+  push contents:
+    discord: |-
+      <@&discord_role_id> Live now! {}
+      Started at: {started_at}
+      Game: {game_name}
+    telegram: |-
+      Test Push {link}
+      Started at: {started_at}
+      Game: {game_name}
+    twitter: |-
+      Bot Twitter push test
+
+      {link}
+      Started at: {started_at}
+      Game: {game_name}
+
+youtube:
+  type: youtube
+  client_secret:
+  discord_report_webhook:
+  push contents:
+    discord: |-
+      <@&discord_role_id> Live now! {}
+      Started at: {started_at}
+      Game: {game_name}
+    telegram: |-
+      Test Push {link}
+      Started at: {started_at}
+      Game: {game_name}
+    twitter: |-
+      Bot Twitter push test
+
+      {link}
+      Started at: {started_at}
+      Game: {game_name}
