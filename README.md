@@ -1,3 +1,5 @@
-Repository where I test various APIs and make custom-fit Notifiers.
+Customized fork of https://github.com/jupiterbjy/StreamNotifier specifically to monitor Cyan's streams, running on catstar infrastructures.
 
-Check respective directories' readme.
+Please use the upstream version. This fork is poorly documentated and will not provide any support.
+
+Please do not report to upstream for any issues with this fork.
