@@ -1,17 +1,15 @@
 #!/usr/bin/python3
 
+from functools import cache
 import time
 import traceback
-import argparse
 import pathlib
-import json
 from typing import Callable
 
 from loguru import logger
 
 from PushMethod import verify_methods, report_closure
 from .youtube_api_client import build_client, YoutubeClient, LiveBroadcast
-from .discord_report import report_closure
 
 
 ROOT = pathlib.Path(__file__).parent.absolute()
@@ -21,8 +19,8 @@ INTERVAL = 10
 
 
 class Notified:
-    def __init__(self):
-        self.file = args.cache
+    def __init__(self, cache_file: pathlib.Path):
+        self.file = cache_file
         self.last_notified = self.file.read_text("utf8") if self.file.exists() else ""
 
         self.file.touch(exist_ok=True)
@@ -35,17 +33,15 @@ class Notified:
         return item in self.last_notified
 
 
-def callback_notify_closure(notify_callbacks):
-    test = args.test
-
-    if test:
+def callback_notify_closure(notify_callbacks, test_mode):
+    if test_mode:
         logger.warning("Test mode enabled, will not push to platforms")
 
     def inner(channel_object: LiveBroadcast):
         logger.info("Notifier callback started for stream {}", channel_object)
         for callback in notify_callbacks:
 
-            if test:
+            if test_mode:
                 logger.info("Test mod, skipping {}", type(callback).__name__)
                 continue
             else:
@@ -59,8 +55,8 @@ def callback_notify_closure(notify_callbacks):
     return inner
 
 
-def start_checking(client: YoutubeClient, callback: Callable, interval, report: Callable):
-    notified = Notified()
+def start_checking(client: YoutubeClient, callback: Callable, interval, report: Callable, cache_file: pathlib.Path):
+    notified = Notified(cache_file)
 
     logger.info("Started polling for streams, interval: {}", interval)
 
@@ -107,7 +103,7 @@ def start_checking(client: YoutubeClient, callback: Callable, interval, report: 
         time.sleep(interval)
 
 
-def main(config):
+def main(config, cache_path: str, test_mode=False):
 
     # read config meow
     client_secret = config["client_secret"]
@@ -123,47 +119,10 @@ def main(config):
 
     logger.info("Verified {}", ", ".join(names))
 
-    callback_unified = callback_notify_closure(callback_list)
+    callback_unified = callback_notify_closure(callback_list, test_mode)
 
     report(title="Notifier Started", fields={
         "Active Push Destination": "\n".join(names)
     })
 
-    start_checking(client, callback_unified, INTERVAL, report)
-
-
-if __name__ == "__main__":
-
-    # parsing start =================================
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        "-p",
-        "--path",
-        metavar="CONFIG_PATH",
-        type=pathlib.Path,
-        default=ROOT.joinpath("configuration.json"),
-        help="Path to configuration json file. Default path is 'configuration.json' adjacent to this script",
-    )
-    parser.add_argument(
-        "-c",
-        "--cache",
-        metavar="CACHE_PATH",
-        type=pathlib.Path,
-        default=ROOT.joinpath("cache.json"),
-        help="Path where cache file will be. Default path is 'cache' adjacent to this script",
-    )
-    parser.add_argument(
-        "-t",
-        "--test",
-        action="store_true",
-        default=False,
-        help="Enable test mode, this does not actually push to platforms.",
-    )
-    args = parser.parse_args()
-
-    # parsing end ===================================
-
-    config = json.loads(args.path.read_text(encoding="utf8"))
-    main(config)
+    start_checking(client, callback_unified, INTERVAL, report, pathlib.Path(cache_path))

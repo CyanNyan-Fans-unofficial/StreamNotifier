@@ -1,10 +1,8 @@
 #!/usr/bin/python3
 
 import traceback
-import argparse
 import pathlib
 import time
-import json
 from typing import Callable
 
 from loguru import logger
@@ -18,8 +16,8 @@ INTERVAL = 2
 
 
 class Notified:
-    def __init__(self):
-        self.file = args.cache
+    def __init__(self, cache_file: pathlib.Path):
+        self.file = cache_file
         self.last_notified = self.file.read_text("utf8") if self.file.exists() else ""
 
         self.file.touch(exist_ok=True)
@@ -33,9 +31,8 @@ class Notified:
 
 
 class RequestInstance:
-    def __init__(self, client: TwitchClient, channel_name: str, callback: Callable, report: Callable):
-
-        self.notified = Notified()
+    def __init__(self, client: TwitchClient, channel_name: str, callback: Callable, report: Callable, cache_file: pathlib.Path):
+        self.notified = Notified(cache_file)
         self.client = client
         self.channel_name = channel_name
         self.callback = callback
@@ -109,17 +106,15 @@ class RequestInstance:
         #         time.sleep(2)
 
 
-def callback_notify_closure(notify_callbacks):
-    test = args.test
-
-    if test:
+def callback_notify_closure(notify_callbacks, test_mode=False):
+    if test_mode:
         logger.warning("Test mode enabled, will not push to platforms")
 
     def inner(channel_object, **kwargs):
         logger.info("Notifier callback started.")
         for callback in notify_callbacks:
 
-            if test:
+            if test_mode:
                 logger.info("Test mod, skipping {}", type(callback).__name__)
                 continue
             else:
@@ -133,7 +128,9 @@ def callback_notify_closure(notify_callbacks):
     return inner
 
 
-def main(config):
+def main(config, cache_path: str, test_mode=False):
+    cache_path = cache_path
+
     channel_name = config["channel name"]
     client_id = config["polling api"]["twitch app id"]
     client_secret = config["polling api"]["twitch app secret"]
@@ -149,9 +146,9 @@ def main(config):
 
     logger.info("Verified {}", ", ".join(names))
 
-    callback_unified = callback_notify_closure(callback_list)
+    callback_unified = callback_notify_closure(callback_list, test_mode)
 
-    req_instance = RequestInstance(client, channel_name, callback_unified, report)
+    req_instance = RequestInstance(client, channel_name, callback_unified, report, pathlib.Path(cache_path))
 
     report(title="Notifier Started", fields={
         "Target": channel_name,
@@ -159,39 +156,3 @@ def main(config):
     })
 
     req_instance.start_checking()
-
-
-if __name__ == "__main__":
-    # parsing start =================================
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        "-p",
-        "--path",
-        metavar="CONFIG_PATH",
-        type=pathlib.Path,
-        default=ROOT.joinpath("configuration.json"),
-        help="Path to configuration json file. Default path is 'configuration.json' adjacent to this script",
-    )
-    parser.add_argument(
-        "-c",
-        "--cache",
-        metavar="CACHE_PATH",
-        type=pathlib.Path,
-        default=ROOT.joinpath("cache.json"),
-        help="Path where cache file will be. Default path is 'cache' adjacent to this script",
-    )
-    parser.add_argument(
-        "-t",
-        "--test",
-        action="store_true",
-        default=False,
-        help="Enable test mode, this does not actually push to platforms.",
-    )
-    args = parser.parse_args()
-
-    # parsing end ===================================
-
-    config = json.loads(args.path.read_text(encoding="utf8"))
-    main(config)
