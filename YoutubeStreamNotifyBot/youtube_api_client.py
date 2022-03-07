@@ -32,6 +32,7 @@ def build_client(
     api_key=None,
     client_secret=None,
     token_dir=None,
+    token=None,
     console=False,
     secure=True,
 ) -> "YoutubeClient":
@@ -67,7 +68,9 @@ def build_client(
 
     credential = None
 
-    if token_dir and token_dir.exists():
+    if token:
+        credential = Credentials.from_authorized_user_info(json.loads(token))
+    elif token_dir and token_dir.exists():
         # cached oauth remains, try to load it
         credential = Credentials.from_authorized_user_file(token_dir.as_posix())
 
@@ -82,11 +85,12 @@ def build_client(
             else:
                 credential = flow.run_local_server()
 
-            if token_dir:
+            try:
                 print(f"Saving oauth token for later use at '{token_dir}'")
                 token_dir.write_text(credential.to_json(), "utf8")
-            else:
-                print('Please save the token in config for later use:')
+            except Exception as e:
+                print(f'Failed to save token! Reason: {str(e)}')
+                print('Please save the token manually for later use:')
                 print(credential.to_json())
 
     # check parameters end ------

@@ -103,11 +103,12 @@ async def main(config, notify_callbacks: dict, cache_path: str, test_mode=False)
     # read config meow
     client_secret = config["client_secret"]
     push_contents = config['push contents']
+    token = config.get('token')
 
     report_list = config.get('report', [])
     report = report_closure((notify_callbacks[x] for x in report_list if x in notify_callbacks), color='ff0000')
 
-    client = build_client(client_secret=client_secret, token_dir=TOKEN_PATH, console=not LOCAL_TESTING)
+    client = build_client(client_secret=client_secret, token_dir=TOKEN_PATH, token=token, console=not LOCAL_TESTING)
 
     logger.info("Application successfully authorized.")
 
