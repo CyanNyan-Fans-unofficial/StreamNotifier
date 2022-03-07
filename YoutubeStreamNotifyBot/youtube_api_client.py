@@ -85,6 +85,9 @@ def build_client(
             if token_dir:
                 print(f"Saving oauth token for later use at '{token_dir}'")
                 token_dir.write_text(credential.to_json(), "utf8")
+            else:
+                print('Please save the token in config for later use:')
+                print(credential.to_json())
 
     # check parameters end ------
 

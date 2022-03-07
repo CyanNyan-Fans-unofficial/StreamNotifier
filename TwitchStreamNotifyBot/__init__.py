@@ -3,6 +3,7 @@
 import traceback
 import pathlib
 import asyncio
+import json
 from typing import Callable
 
 from loguru import logger
@@ -10,7 +11,6 @@ from loguru import logger
 from PushMethod import report_closure, callback_notify_closure
 from .twitch_api_client import TwitchClient
 
-ROOT = pathlib.Path(__file__).parent.absolute()
 USE_GET_STREAM = True
 INTERVAL = 2
 
@@ -18,16 +18,26 @@ INTERVAL = 2
 class Notified:
     def __init__(self, cache_file: pathlib.Path):
         self.file = cache_file
-        self.last_notified = self.file.read_text("utf8") if self.file.exists() else ""
+
+        try:
+            self.last_notified = json.loads(self.file.read_text("utf8"))
+        except Exception:
+            logger.warning('Failed to load last notified data!')
+            traceback.print_exc(limit=4)
+            self.last_notified = {}
 
         self.file.touch(exist_ok=True)
 
-    def write(self, new_time):
-        self.last_notified = new_time
-        self.file.write_text(new_time, "utf8")
+    def write(self, new_info):
+        self.last_notified = new_info
+        self.file.write_text(json.dumps(new_info), "utf8")
 
-    def __contains__(self, item):
-        return item in self.last_notified
+    def __contains__(self, info):
+        return info.started_at == self.last_notified.get('started_at')
+
+    def verify_push(self, info):
+        if info.title == self.last_notified.get('title'):
+            raise ValueError('Twitch stream title did not change!')
 
 
 class RequestInstance:
@@ -39,6 +49,7 @@ class RequestInstance:
         self.report = report
 
     async def start_checking(self):
+        await asyncio.sleep(INTERVAL)
 
         user = self.client.get_user(self.channel_name)
 
@@ -77,9 +88,9 @@ class RequestInstance:
                     last_err = ""
                     self.report(title="Twitch Notifier Up", desc="Last exception cleared")
 
-                if output and output.type == "live" and output.started_at not in self.notified:
+                if output and output.type == "live" and output not in self.notified:
                     logger.info("Found an active live stream for channel {}", self.channel_name)
-                    self.report(title="Stream Found", fields={
+                    self.report(title="Twitch Stream Found", fields={
                         "Started": output.started_at,
                         "Title": output.title,
                         "Type": output.type,
@@ -88,10 +99,14 @@ class RequestInstance:
                         "Live": output.is_live
                     })
 
-                    self.notified.write(output.started_at)
-                    self.callback(**output.as_dict(), link=f"https://twitch.tv/{self.channel_name}")
-
-            await asyncio.sleep(INTERVAL)
+                    try:
+                        self.notified.verify_push(output)
+                    except ValueError as e:
+                        self.report(title='Push notification cancelled!🚫', desc=f'Reason: {str(e)}')
+                    else:
+                        self.callback(**output.as_dict(), link=f"https://twitch.tv/{self.channel_name}")
+                    finally:
+                        self.notified.write(output.as_dict())
 
         # else:
         #     while True:

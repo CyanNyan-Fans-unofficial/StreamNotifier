@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from time import time
+import json
 import traceback
 import pathlib
 import asyncio
@@ -21,16 +21,29 @@ INTERVAL = 10
 class Notified:
     def __init__(self, cache_file: pathlib.Path):
         self.file = cache_file
-        self.last_notified = self.file.read_text("utf8") if self.file.exists() else ""
+
+        try:
+            self.last_notified = json.loads(self.file.read_text("utf8"))
+        except Exception:
+            logger.warning('Failed to load last notified data!')
+            traceback.print_exc(limit=4)
+            self.last_notified = {}
 
         self.file.touch(exist_ok=True)
 
-    def write(self, new_id):
-        self.last_notified = new_id
-        self.file.write_text(new_id, "utf8")
+    def write(self, new_info):
+        self.last_notified = new_info
+        self.file.write_text(json.dumps(new_info), "utf8")
 
-    def __contains__(self, item):
-        return item in self.last_notified
+    def __contains__(self, info):
+        return info.id == self.last_notified['id']
+
+    def verify_push(self, info):
+        if info.title == self.last_notified.get('title'):
+            raise ValueError('YouTube stream title did not change!')
+
+        if info.privacy_status == 'private':
+            raise ValueError('Stream is private!')
 
 
 async def start_checking(client: YoutubeClient, callback: Callable, interval, report: Callable, cache_file: pathlib.Path):
@@ -41,6 +54,8 @@ async def start_checking(client: YoutubeClient, callback: Callable, interval, re
     last_err = ""
 
     while True:
+        await asyncio.sleep(interval)
+
         try:
             active = client.get_active_user_broadcasts(max_results=1)
 
@@ -59,26 +74,29 @@ async def start_checking(client: YoutubeClient, callback: Callable, interval, re
                 last_err = ""
                 report(title="Youtube Notifier Up", desc="Last exception cleared")
 
-            if active and active[0].id not in notified:
+            if active and active[0] not in notified:
                 # gotcha! there's active stream
                 stream = active[0]
 
                 logger.debug("Found Active stream: {}", stream)
 
-                report(title="Stream Found", desc="Private Streams will not be pushed.", fields={
+                report(title="YouTube Stream Found", desc="Private Streams will not be pushed.", fields={
                     "Started": stream.actual_start_time,
                     "Title": stream.title,
                     "Privacy": stream.privacy_status,
                     "link": stream.link,
                     "Live": stream.life_cycle_status
                 })
+
                 # write in cache and notify if not private
-                notified.write(stream.id)
-
-                if stream.privacy_status != "private":
+                try:
+                    notified.verify_push(stream)
+                except ValueError as e:
+                    report(title='Push notification cancelled!🚫', desc=f'Reason: {str(e)}')
+                else:
                     callback(**stream.as_dict())
-
-        await asyncio.sleep(interval)
+                finally:
+                    notified.write(stream.as_dict())
 
 
 async def main(config, notify_callbacks: dict, cache_path: str, test_mode=False):
