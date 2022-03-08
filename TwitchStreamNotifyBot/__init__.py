@@ -49,8 +49,6 @@ class RequestInstance:
         self.report = report
 
     async def start_checking(self):
-        await asyncio.sleep(INTERVAL)
-
         user = self.client.get_user(self.channel_name)
 
         # self.report(title="Notifier Started", desc="Debugging info", fields={
@@ -69,6 +67,7 @@ class RequestInstance:
         logger.info("Started polling for streams, interval: {}", INTERVAL)
 
         while True:
+            await asyncio.sleep(INTERVAL)
 
             try:
                 output = self.client.get_stream(user.id, log=False)

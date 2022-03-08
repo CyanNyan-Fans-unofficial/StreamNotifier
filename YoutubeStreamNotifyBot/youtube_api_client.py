@@ -182,6 +182,17 @@ class LiveBroadcast:
         return f"https://www.youtube.com/watch?v={self.id}"
 
     @LazyProperty
+    def link_short(self):
+        """
+        This is Property - access like an attribute
+
+        Returns:
+            short url of the stream (youtu.be)
+        """
+
+        return f"https://youtu.be/{self.id}"
+
+    @LazyProperty
     def published_at(self):
         """
         This is Property - access like an attribute

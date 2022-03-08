@@ -45,6 +45,14 @@ class Notified:
         if info.privacy_status == 'private':
             raise ValueError('Stream is private!')
 
+    def extra_attributes(self, info):
+        extra_attr = {}
+
+        if info.description:
+            description = info.description.strip().split('\n')
+            extra_attr['description_first_line'] = description[0]
+
+        return extra_attr
 
 async def start_checking(client: YoutubeClient, callback: Callable, interval, report: Callable, cache_file: pathlib.Path):
     notified = Notified(cache_file)
@@ -94,7 +102,7 @@ async def start_checking(client: YoutubeClient, callback: Callable, interval, re
                 except ValueError as e:
                     report(title='Push notification cancelled!🚫', desc=f'Reason: {str(e)}')
                 else:
-                    callback(**stream.as_dict())
+                    callback(**stream.as_dict(), **notified.extra_attributes(stream))
                 finally:
                     notified.write(stream.as_dict())
 
