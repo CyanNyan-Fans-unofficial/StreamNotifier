@@ -14,8 +14,7 @@ stream_types = {
 }
 
 
-async def main():
-
+async def stream_notifier_cli():
     # Parsing arguments from command
     parser = argparse.ArgumentParser()
 
@@ -69,6 +68,3 @@ async def main():
         coro_list.append(checker_main(service_config, callback_list, join(args.cache_dir, f'cache-{name}.json'), args.test))
 
     await asyncio.gather(*coro_list)
-
-if __name__ == '__main__':
-    asyncio.run(main())

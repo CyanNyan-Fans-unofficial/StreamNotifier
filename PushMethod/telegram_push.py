@@ -1,5 +1,6 @@
 from typing import Union
 import traceback
+from html import escape
 
 from loguru import logger
 import telegram
@@ -79,7 +80,7 @@ class TelegramPush(Push):
             message.extend([f'<b>{title}</b>', ''])
 
         if desc:
-            message.extend([desc, ''])
+            message.extend([escape(desc), ''])
 
         if fields:
             for title, value in fields.items():
