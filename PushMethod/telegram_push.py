@@ -13,6 +13,7 @@ class TelegramPush(Push):
     def __init__(self, config: dict):
         self.token = config["token"]
         self.chat_ids = config["chat id"]
+        self.pin = config.get("pin", False)
 
         self.bot: Union[None, telegram.Bot] = None
         self.auth()
@@ -66,7 +67,8 @@ class TelegramPush(Push):
             else:
                 logger.info("Notified to telegram channel {}.", chat_id)
                 try:
-                    self.bot.pin_chat_message(message.chat_id, message.message_id)
+                    if self.pin:
+                        self.bot.pin_chat_message(message.chat_id, message.message_id)
                 except Exception:
                     traceback.print_exc()
                     logger.info(
@@ -87,7 +89,7 @@ class TelegramPush(Push):
                 if title:
                     message.append(f'<b>{title}</b>')
                 if value:
-                    message.append(value)
+                    message.append(f'{value}')
                 message.append('')
 
         for chat_id in self.chat_ids:

@@ -33,10 +33,12 @@ class Notified:
 
     def write(self, new_info):
         self.last_notified = new_info
-        self.file.write_text(json.dumps(new_info), "utf8")
+
+        self.file.write_text(json.dumps(new_info,
+            default=lambda o: f"<<{type(o).__qualname__}>>"), "utf8")
 
     def __contains__(self, info):
-        return info.id == self.last_notified['id']
+        return info.id == self.last_notified.get('id')
 
     def verify_push(self, info):
         if info.title == self.last_notified.get('title'):
