@@ -59,21 +59,13 @@ class TelegramPush(Push):
         for chat_id in self.chat_ids:
             try:
                 message: telegram.Message = self.bot.send_message(
-                    chat_id=chat_id, text=content
-                )
+                    chat_id=chat_id, text=content)
+                if self.pin:
+                    self.bot.pin_chat_message(message.chat_id, message.message_id)
+                logger.info("Notified to telegram channel {}.", chat_id)
             except Exception:
                 traceback.print_exc()
-                logger.warning("Failed to send to group chat id {}.", chat_id)
-            else:
-                logger.info("Notified to telegram channel {}.", chat_id)
-                try:
-                    if self.pin:
-                        self.bot.pin_chat_message(message.chat_id, message.message_id)
-                except Exception:
-                    traceback.print_exc()
-                    logger.info(
-                        "Not enough permission to pin on telegram channel {}.", chat_id
-                    )
+                logger.warning("Failed to send message or pin: chat id {}.", chat_id)
 
     def report(self, title="StreamNotifier Status", desc=None, color=None, fields: Union[dict[str, str], None] = None):
         message = []
@@ -87,9 +79,9 @@ class TelegramPush(Push):
         if fields:
             for title, value in fields.items():
                 if title:
-                    message.append(f'<b>{title}</b>')
+                    message.append(f'<b>{escape(str(title))}</b>')
                 if value:
-                    message.append(f'{value}')
+                    message.append(f'{escape(str(value))}')
                 message.append('')
 
         for chat_id in self.chat_ids:
