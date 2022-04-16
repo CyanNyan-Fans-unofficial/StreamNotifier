@@ -62,6 +62,8 @@ async def start_checking(client: YoutubeClient, callback: Callable, interval, re
     logger.info("Started polling for streams, interval: {}", interval)
 
     last_err = ""
+    err_count = 0
+    err_report_threshold = 5
 
     while True:
         await asyncio.sleep(interval)
@@ -72,17 +74,22 @@ async def start_checking(client: YoutubeClient, callback: Callable, interval, re
         except Exception as err:
             msg = str(err)
 
+            err_count += 1
             if last_err == msg:
                 logger.critical("Previous Exception still in effect")
             else:
                 last_err = msg
                 traceback.print_exc(limit=4)
+
+            if err_count == err_report_threshold:
                 report(title="Youtube Notifier Down", desc=traceback.format_exc(limit=4))
 
         else:
-            if last_err:
+            if err_count >= err_report_threshold:
                 last_err = ""
                 report(title="Youtube Notifier Up", desc="Last exception cleared")
+
+            err_count = 0
 
             if active and active[0] not in notified:
                 # gotcha! there's active stream

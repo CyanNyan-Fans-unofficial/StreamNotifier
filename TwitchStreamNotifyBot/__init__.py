@@ -61,6 +61,8 @@ class RequestInstance:
 
         logger.info("Found user: {}", user)
         last_err = ""
+        err_count = 0
+        err_report_threshold = 5
 
         # logger.info("Started listening using GET_STREAM.")
 
@@ -75,17 +77,22 @@ class RequestInstance:
             except Exception as err:
                 msg = str(err)
 
+                err_count += 1
                 if last_err == msg:
                     logger.critical("Previous Exception still in effect")
                 else:
                     last_err = msg
                     traceback.print_exc(limit=4)
+
+                if err_count == err_report_threshold:
                     self.report(title="Twitch Notifier Down", desc=traceback.format_exc(limit=4))
 
             else:
-                if last_err:
+                if err_count >= err_report_threshold:
                     last_err = ""
                     self.report(title="Twitch Notifier Up", desc="Last exception cleared")
+
+                err_count = 0
 
                 if output and output.type == "live" and output not in self.notified:
                     logger.info("Found an active live stream for channel {}", self.channel_name)
