@@ -8,7 +8,6 @@ Readability is 'amazing', even I can't read well. Will add docstrings when I can
 import inspect
 import json
 import os
-import pathlib
 import datetime
 from typing import Tuple, Union
 
@@ -31,9 +30,7 @@ API_VERSION = "v3"
 def build_client(
     api_key=None,
     client_secret=None,
-    token_dir=None,
     token=None,
-    console=False,
     secure=True,
 ) -> "YoutubeClient":
     """
@@ -42,8 +39,7 @@ def build_client(
     Args:
         api_key: Google Data API key
         client_secret_dir: client secret file to load from.
-        token_dir: Oauth token file to create credential from.
-        console: If true, accept code via command line. Otherwise opens a local web server.
+        token: Oauth token to create credentials from (json string)
         secure: Enables Https request.
 
     Returns:
@@ -60,9 +56,6 @@ def build_client(
     if api_key is not None:
         config["developerKey"] = api_key
 
-    if token_dir:
-        token_dir = pathlib.Path(token_dir)
-
     if client_secret:
         client_secret = json.loads(client_secret)
 
@@ -70,9 +63,6 @@ def build_client(
 
     if token:
         credential = Credentials.from_authorized_user_info(json.loads(token))
-    elif token_dir and token_dir.exists():
-        # cached oauth remains, try to load it
-        credential = Credentials.from_authorized_user_file(token_dir.as_posix())
 
     if not credential or not credential.valid:
         if credential and credential.expired and credential.refresh_token:
@@ -80,18 +70,12 @@ def build_client(
         else:
             flow = InstalledAppFlow.from_client_config(client_secret, scopes)
 
-            if console:
-                credential = flow.run_console()
-            else:
-                credential = flow.run_local_server()
+            # Out-Of-Band (OOB) flow is deprecated, use run_local_server only
+            credential = flow.run_local_server()
 
-            try:
-                print(f"Saving oauth token for later use at '{token_dir}'")
-                token_dir.write_text(credential.to_json(), "utf8")
-            except Exception as e:
-                print(f'Failed to save token! Reason: {str(e)}')
-                print('Please save the token manually for later use:')
-                print(credential.to_json())
+            print('Please copy the following token into the config:')
+            print()
+            print(credential.to_json())
 
     # check parameters end ------
 

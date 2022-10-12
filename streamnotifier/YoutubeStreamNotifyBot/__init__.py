@@ -13,8 +13,6 @@ from .youtube_api_client import build_client, YoutubeClient
 
 
 ROOT = pathlib.Path(__file__).parent.absolute()
-TOKEN_PATH = ROOT.joinpath("token.json")
-LOCAL_TESTING = False
 INTERVAL = 10
 
 
@@ -125,7 +123,7 @@ async def main(config, notify_callbacks: dict, cache_path: str, test_mode=False)
     report_list = config.get('report', [])
     report = report_closure((notify_callbacks[x] for x in report_list if x in notify_callbacks), color='ff0000')
 
-    client = build_client(client_secret=client_secret, token_dir=TOKEN_PATH, token=token, console=not LOCAL_TESTING)
+    client = build_client(client_secret=client_secret, token=token)
 
     logger.info("Application successfully authorized.")
 
