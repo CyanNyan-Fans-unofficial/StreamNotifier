@@ -3,9 +3,9 @@ import asyncio
 from loguru import logger
 from os.path import join
 from yaml import safe_load
-from TwitchStreamNotifyBot import main as twitch_main
-from YoutubeStreamNotifyBot import main as youtube_main
-from PushMethod import verify_method
+from .TwitchStreamNotifyBot import main as twitch_main
+from .YoutubeStreamNotifyBot import main as youtube_main
+from .PushMethod import verify_method
 
 
 stream_types = {

@@ -8,7 +8,7 @@ from typing import Callable
 
 from loguru import logger
 
-from PushMethod import report_closure, callback_notify_closure
+from streamnotifier.PushMethod import report_closure, callback_notify_closure
 from .youtube_api_client import build_client, YoutubeClient
 
 
