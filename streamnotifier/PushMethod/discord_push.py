@@ -13,13 +13,11 @@ from .base import Push
 class DiscordPush(Push):
     def __init__(self, config: dict):
         self.webhook_url = config["webhook url"]
-        self._verify()
-
-    def _verify(self):
         if not self.webhook_url:
             logger.info("Discord webhook url empty, skipping.")
             raise ValueError("Discord webhook url empty, skipping.")
 
+    def verify(self):
         logger.info("Verification of discord webhook url started.")
 
         response = requests.get(self.webhook_url)

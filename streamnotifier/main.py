@@ -1,17 +1,13 @@
 import argparse
 import asyncio
+import pathlib
+
+from .PushMethod import Push
 from loguru import logger
-from os.path import join
 from yaml import safe_load
-from .TwitchStreamNotifyBot import main as twitch_main
-from .YoutubeStreamNotifyBot import main as youtube_main
-from .PushMethod import verify_method
+from .checker import StreamChecker
 
 
-stream_types = {
-    'twitch': twitch_main,
-    'youtube': youtube_main
-}
 
 
 async def stream_notifier_cli():
@@ -48,23 +44,21 @@ async def stream_notifier_cli():
         config = safe_load(f)
 
     # Verify push methods
-    push_methods = config.pop('push methods')
-    callback_list = {}
-    for name, push_method_config in push_methods.items():
-        method = verify_method(name, push_method_config)
-        if method:
-            callback_list[name] = method
-
-    names = (f'{name}: {x.__class__.__name__}' for name, x in callback_list.items())
-    logger.info("Verified {}", ", ".join(names))
+    push_methods_config = config.pop("push methods")
+    push = Push(push_methods_config, test_mode=args.test)
+    logger.info(f'Verified push methods: {", ".join(push.methods.keys())}')
 
     # Initialize stream checkers
     coro_list = []
     for name, service_config in config.items():
-        stream_type = service_config.pop('type')
-
-        checker_main = stream_types[stream_type]
-        logger.info('Loaded stream checker={}, type={}, testmode={}', name, stream_type, args.test)
-        coro_list.append(checker_main(service_config, callback_list, join(args.cache_dir, f'cache-{name}.json'), args.test))
+        cache_file = pathlib.Path(args.cache_dir) / f"cache-{name}.json"
+        checker = StreamChecker(service_config, push, cache_file)
+        logger.info(
+            "Loaded stream checker={}, type={}, test_mode={}",
+            name,
+            checker.checker_type,
+            args.test,
+        )
+        coro_list.append(checker.run())
 
     await asyncio.gather(*coro_list)

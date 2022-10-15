@@ -15,18 +15,16 @@ class TelegramPush(Push):
         self.chat_ids = config["chat id"]
         self.pin = config.get("pin", False)
 
-        self.bot: Union[None, telegram.Bot] = None
-        self.auth()
-
-    def auth(self):
         if not all((self.token, self.chat_ids)):
             logger.info("One or more Telegram parameters are empty, skipping.")
             raise ValueError("One or more Telegram parameters are empty, skipping.")
 
+        self.bot = telegram.Bot(token=self.token)
+
+    def verify(self):
         logger.info("Verification of telegram token started.")
 
-        bot = telegram.Bot(token=self.token)
-        updates = bot.get_updates()
+        updates = self.bot.get_updates()
 
         effective_chats = set()
 
@@ -45,8 +43,6 @@ class TelegramPush(Push):
                     "Cannot find group chat id {}, is bot added to the group? Is group inactive?",
                     chat_id,
                 )
-
-        self.bot = bot
 
         reachable = len(self.chat_ids) - len(not_found)
         logger.info(

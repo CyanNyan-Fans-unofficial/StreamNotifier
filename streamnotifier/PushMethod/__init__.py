@@ -1,65 +1,73 @@
 import traceback
-from typing import Callable
 
 from loguru import logger
 
-from . import discord_push, telegram_push, twitter_push
+from .discord_push import DiscordPush
+from .telegram_push import TelegramPush
+from .twitter_push import TwitterPush
 
 
 modules = {
-    'discord': discord_push.DiscordPush,
-    'telegram': telegram_push.TelegramPush,
-    'twitter': twitter_push.TwitterPush
+    'discord': DiscordPush,
+    'telegram': TelegramPush,
+    'twitter': TwitterPush
 }
 
+class Push:
+    def __init__(self, push_methods: dict[str, dict], test_mode=False):
+        self.methods = {}
+        self.test_mode = test_mode
 
-def verify_method(name, config: dict):
-    # Look up the push module by "type" field
-    push_type = config['type']
-    method = modules[push_type]
+        for name, config in push_methods.items():
+            # Look up the push module by "type" field
+            push_type = config['type']
+            module = modules[push_type]
+            instance = module(config)
 
-    try:
-        instance = method(config)
-    except Exception as err:
-        logger.warning("Got Error during verifying {} ({})", name, method.__name__)
-        traceback.print_exception(err, err, err.__traceback__, limit=2)
-    else:
-        return instance
-
-def callback_notify_closure(notify_callbacks: dict[str, Callable], contents: dict[str, str], test_mode=False):
-    callbacks = dict(notify_callbacks)
-
-    if test_mode:
-        logger.warning("Test mode enabled, will not push to platforms")
-
-    def inner(**kwargs):
-        logger.info("Notifier callback started.")
-        for name, callback in callbacks.items():
-            content = contents[name]
-            text = content.format(**kwargs)
-
-            if test_mode:
-                logger.info("Test mode, skipping {}", type(callback).__name__)
-                continue
+            try:
+                instance.verify()
+            except Exception as err:
+                logger.warning("Got Error during verifying {} ({})", name, module.__name__)
+                traceback.print_exception(err, err, err.__traceback__, limit=2)
             else:
-                logger.info("Pushing for {}", type(callback).__name__)
+                self.methods[name] = instance
+
+    def send_push(self, push_contents: dict[str, str], **kwargs):
+        logger.info('Notifier callback started')
+        if self.test_mode:
+            logger.warning("Test mode enabled, will not push to platforms")
+
+        for name, content in push_contents.items():
+            text = content.format(**kwargs)
+            try:
+                module = self.methods[name]
+            except KeyError:
+                logger.warning('Push method {} is not configured! Skipping.', name)
+                continue
+
+            if self.test_mode:
+                logger.info("Test mode, skipping {} ({})", name, type(module).__name__)
+                continue
+
+            logger.info("Pushing for {} ({})", name, type(module).__name__)
 
             try:
-                callback.send(text)
+                module.send(text)
             except Exception:
                 traceback.print_exc()
 
-    return inner
-
-def report_closure(notify_callbacks, **default_kwargs):
-    callbacks = list(notify_callbacks)
-    def inner(**kwargs):
-        kwargs = default_kwargs | kwargs
-        for callback in callbacks:
-            logger.info("Sending report for {}", type(callback).__name__)
+    def send_report(self, report_methods, **kwargs):
+        for name in report_methods:
             try:
-                callback.report(**kwargs)
+                module = self.methods[name]
+            except KeyError:
+                logger.warning('Push method {} is not configured! Skipping.', name)
+                continue
+
+            logger.info("Sending report for {}", type(module).__name__)
+            params = kwargs
+
+            try:
+                module.report(**params)
             except Exception:
                 traceback.print_exc()
-
-    return inner
