@@ -5,16 +5,22 @@ import traceback
 from typing import Optional
 
 from loguru import logger
-
 from streamnotifier.model import BaseModel, from_mapping
-from .twitch import RequestInstance as TwitchChecker
-from .youtube import RequestInstance as YoutubeChecker
+
 from .debug import DebugChecker
+from .twitch import RequestInstance as TwitchChecker
+from .twitter import TwitterChecker
+from .youtube import RequestInstance as YoutubeChecker
 
 
 class StreamCheckerConfig(BaseModel):
     type: from_mapping(
-        {"twitch": TwitchChecker, "youtube": YoutubeChecker, "debug": DebugChecker}
+        {
+            "twitch": TwitchChecker,
+            "youtube": YoutubeChecker,
+            "twitter": TwitterChecker,
+            "debug": DebugChecker,
+        }
     )
     report: list[str]
     push_contents: dict[str, str]
@@ -91,12 +97,11 @@ class StreamChecker:
             title=f"Stream Notifier Started",
             fields={
                 "Active Push Destination": "\n".join(
-                    f"{name}: {self.push.methods[name].__class__.__name__}"
+                    f"{name}: {self.push.comments[name]}"
                     for name in self.config.push_contents
                 ),
                 "Active Report Destination": "\n".join(
-                    f"{name}: {self.push.methods[name].__class__.__name__}"
-                    for name in self.config.report
+                    f"{name}: {self.push.comments[name]}" for name in self.config.report
                 ),
                 "Type": self.config.type.__qualname__,
                 "Check Interval": self.interval,
