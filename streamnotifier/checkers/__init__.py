@@ -9,10 +9,13 @@ from loguru import logger
 from streamnotifier.model import BaseModel, from_mapping
 from .twitch import RequestInstance as TwitchChecker
 from .youtube import RequestInstance as YoutubeChecker
+from .debug import DebugChecker
 
 
 class StreamCheckerConfig(BaseModel):
-    type: from_mapping({"twitch": TwitchChecker, "youtube": YoutubeChecker})
+    type: from_mapping(
+        {"twitch": TwitchChecker, "youtube": YoutubeChecker, "debug": DebugChecker}
+    )
     report: list[str]
     push_contents: dict[str, str]
     interval: Optional[float]
