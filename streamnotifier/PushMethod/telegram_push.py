@@ -1,9 +1,9 @@
-from typing import Union
 import traceback
 from html import escape
+from typing import Union
 
-from loguru import logger
 import telegram
+from loguru import logger
 from telegram.parsemode import ParseMode
 
 from .base import Push
@@ -55,7 +55,8 @@ class TelegramPush(Push):
         for chat_id in self.chat_ids:
             try:
                 message: telegram.Message = self.bot.send_message(
-                    chat_id=chat_id, text=content)
+                    chat_id=chat_id, text=content
+                )
                 if self.pin:
                     self.bot.pin_chat_message(message.chat_id, message.message_id)
                 logger.info("Notified to telegram channel {}.", chat_id)
@@ -63,25 +64,33 @@ class TelegramPush(Push):
                 traceback.print_exc()
                 logger.warning("Failed to send message or pin: chat id {}.", chat_id)
 
-    def report(self, title="StreamNotifier Status", desc=None, color=None, fields: Union[dict[str, str], None] = None):
+    def report(
+        self,
+        title="StreamNotifier Status",
+        desc=None,
+        color=None,
+        fields: Union[dict[str, str], None] = None,
+    ):
         message = []
 
         if title:
-            message.extend([f'<b>{title}</b>', ''])
+            message.extend([f"<b>{escape(title)}</b>", ""])
 
         if desc:
-            message.extend([escape(desc), ''])
+            message.extend([escape(desc), ""])
 
         if fields:
             for title, value in fields.items():
                 if title:
-                    message.append(f'<b>{escape(str(title))}</b>')
+                    message.append(f"<b>{escape(str(title))}</b>")
                 if value:
-                    message.append(f'{escape(str(value))}')
-                message.append('')
+                    message.append(f"{escape(str(value))}")
+                message.append("")
 
         for chat_id in self.chat_ids:
             try:
-                self.bot.send_message(chat_id, '\n'.join(message), parse_mode=ParseMode.HTML)
+                self.bot.send_message(
+                    chat_id, "\n".join(message), parse_mode=ParseMode.HTML
+                )
             except Exception as err:
                 traceback.print_exception(err, err, err.__traceback__)
