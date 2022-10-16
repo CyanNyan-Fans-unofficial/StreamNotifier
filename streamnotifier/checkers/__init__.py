@@ -72,11 +72,11 @@ class StreamChecker:
             return
 
         await self.send_report(
-            title=f"Stream found for {self.checker_type}", fields=summary
+            title=f"Stream found for {self.config.type}", fields=summary
         )
 
         try:
-            self.push.send_push(self.push_contents, **info)
+            self.push.send_push(self.config.push_contents, **info)
         except Exception as e:
             await self.send_report(
                 title="Notification Push failed!❌", desc=f"{type(e).__name__}: {str(e)}"
