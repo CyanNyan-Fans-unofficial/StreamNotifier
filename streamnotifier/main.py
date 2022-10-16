@@ -56,7 +56,7 @@ async def stream_notifier_cli():
         logger.info(
             "Loaded stream checker={}, type={}, test_mode={}",
             name,
-            checker.checker_type,
+            checker.config.type,
             args.test,
         )
         coro_list.append(checker.run())

@@ -1,26 +1,37 @@
 from functools import cache
 
 from loguru import logger
+from streamnotifier.model import BaseModel, CheckerConfig, Color
 
 from .twitch_api_client import TwitchClient
 
 
-class RequestInstance:
-    color = 'a364fe'
+class PollingApi(BaseModel):
+    twitch_app_id: str
+    twitch_app_secret: str
+
+
+class Config(CheckerConfig):
+    color: Color = "a364fe"
     check_interval = 2
+    channel_name: str
+    polling_api: PollingApi
 
+    def create_client(self):
+        return TwitchClient(
+            self.polling_api.twitch_app_id, self.polling_api.twitch_app_secret
+        )
+
+
+class RequestInstance:
     def __init__(self, config):
-        client_id = config["polling api"]["twitch app id"]
-        client_secret = config["polling api"]["twitch app secret"]
-
-        self.channel_name = config["channel name"]
-        self.client = TwitchClient(client_id, client_secret)
-
-        logger.info("Target Channel: {}", self.channel_name)
+        self.config = Config.parse_obj(config)
+        self.client = self.config.create_client()
+        logger.info("Target Channel: {}", self.config.channel_name)
 
     @cache
     def get_user(self):
-        return self.client.get_user(self.channel_name)
+        return self.client.get_user(self.config.channel_name)
 
     async def run_check(self):
         user = self.get_user()

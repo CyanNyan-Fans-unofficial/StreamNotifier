@@ -18,6 +18,7 @@ google-auth-oauthlib = "^0.5.2"
 PyYAML = "^6.0"
 feedparser = "^6.0.10"
 aiohttp = "^3.8.3"
+pydantic = "^1.10.2"
 
 
 [build-system]

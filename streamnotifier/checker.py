@@ -2,46 +2,35 @@ import asyncio
 import json
 import pathlib
 import traceback
+from typing import Optional
 
 from loguru import logger
 
+from .model import BaseModel, from_mapping
 from .TwitchStreamNotifyBot import RequestInstance as TwitchChecker
 from .YoutubeStreamNotifyBot import RequestInstance as YoutubeChecker
 
-stream_types = {
-    "twitch": TwitchChecker,
-    "youtube": YoutubeChecker,
-}
+
+class StreamCheckerConfig(BaseModel):
+    type: from_mapping({"twitch": TwitchChecker, "youtube": YoutubeChecker})
+    report: list[str]
+    push_contents: dict[str, str]
+    interval: Optional[float]
 
 
 class StreamChecker:
     def __init__(self, config, push, cache_file: pathlib.Path):
-        self.checker_type = config.pop("type")
-        self.report = config.pop("report", [])
-        self.push_contents = config.pop("push contents")
-        self.interval_override = config.pop("interval", None)
-
+        self.config = StreamCheckerConfig.parse_obj(config)
+        self.instance = self.config.type(config)
         self.push = push
         self.cache_file = cache_file
 
-        try:
-            checker_cls = stream_types[self.checker_type]
-        except KeyError:
-            logger.error("Unknown checker type: {}", self.checker_type)
-
-        self.instance = checker_cls(config)
-
     def get_cache(self):
-        if not self.cache_file.exists():
-            self.cache_file.write_text("{}")
-            return
-
         try:
             with self.cache_file.open() as f:
                 data = json.load(f)
         except Exception:
-            self.cache_file.write_text("{}")
-            return
+            return {}
 
         return data
 
@@ -56,14 +45,11 @@ class StreamChecker:
 
     @property
     def interval(self):
-        interval = self.interval_override
-        if interval is None:
-            return self.instance.check_interval
-        return interval
+        return self.config.interval or self.instance.config.check_interval
 
     async def send_report(self, **kwargs):
-        args = {"color": self.instance.color} | kwargs
-        self.push.send_report(self.report, **args)
+        args = {"color": self.instance.config.color} | kwargs
+        self.push.send_report(self.config.report, **args)
 
     async def run_once(self):
         info = await self.instance.run_check()
@@ -103,14 +89,14 @@ class StreamChecker:
             fields={
                 "Active Push Destination": "\n".join(
                     f"{name}: {self.push.methods[name].__class__.__name__}"
-                    for name in self.push_contents
+                    for name in self.config.push_contents
                 ),
                 "Active Report Destination": "\n".join(
                     f"{name}: {self.push.methods[name].__class__.__name__}"
-                    for name in self.report
+                    for name in self.config.report
                 ),
-                "Type": self.checker_type,
-                "Check Interval": self.instance.check_interval,
+                "Type": self.config.type.__qualname__,
+                "Check Interval": self.interval,
             },
         )
 
