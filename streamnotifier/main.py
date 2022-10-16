@@ -5,9 +5,7 @@ import pathlib
 from .PushMethod import Push
 from loguru import logger
 from yaml import safe_load
-from .checker import StreamChecker
-
-
+from .checkers import StreamChecker
 
 
 async def stream_notifier_cli():

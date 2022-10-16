@@ -6,9 +6,9 @@ from typing import Optional
 
 from loguru import logger
 
-from .model import BaseModel, from_mapping
-from .TwitchStreamNotifyBot import RequestInstance as TwitchChecker
-from .YoutubeStreamNotifyBot import RequestInstance as YoutubeChecker
+from streamnotifier.model import BaseModel, from_mapping
+from .twitch import RequestInstance as TwitchChecker
+from .youtube import RequestInstance as YoutubeChecker
 
 
 class StreamCheckerConfig(BaseModel):
