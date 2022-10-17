@@ -43,7 +43,7 @@ class RequestInstance:
 
     @classmethod
     def verify_push(cls, last_notified, current_info):
-        if current_info.get("started_at") != last_notified.get("started_at"):
+        if current_info.get("started_at") == last_notified.get("started_at"):
             return False
 
         if current_info.get("title") == last_notified.get("title"):
