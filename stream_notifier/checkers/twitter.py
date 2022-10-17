@@ -2,6 +2,7 @@ import tweepy
 import tweepy.models
 
 from stream_notifier.model import CheckerConfig, Color
+from stream_notifier.utils import flatten_dict
 
 
 class Config(CheckerConfig):
@@ -33,20 +34,22 @@ class TwitterChecker:
         )
         if not tweets:
             return
-        info = tweets[0].__dict__
-        info["url"] = f"https://vxtwitter.com/{info['source']}/status/{info['id']}"
+        info = flatten_dict(tweets[0]._json, "user")
+        info[
+            "url"
+        ] = f"https://vxtwitter.com/{info['user_screen_name']}/status/{info['id']}"
         return info
 
     @classmethod
     def verify_push(cls, last_notified, current_info):
         if not last_notified.get("id"):
             raise ValueError("Last notified ID does not exist!")
-        if not last_notified["source"] != current_info["source"]:
+        if last_notified["user_id"] != current_info["user_id"]:
             raise ValueError(
-                f"Twitter has changed! {last_notified['source']} -> {current_info['source']}"
+                f"Twitter user has changed! {last_notified['user_screen_name']} -> {current_info['user_screen_name']}"
             )
         return last_notified["id"] != current_info["id"]
 
     @classmethod
     def summary(cls, info):
-        return {"ID": info["id"], "Source": info["source"]}
+        return {"ID": info["id"], "User": info["user_screen_name"]}
