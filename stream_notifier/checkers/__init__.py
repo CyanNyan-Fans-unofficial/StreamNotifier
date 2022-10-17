@@ -5,11 +5,14 @@ import traceback
 from time import time
 from typing import Optional
 
+from addict import Dict
 from aiohttp import ClientSession, ClientTimeout
 from loguru import logger
 from pydantic import HttpUrl
 from stream_notifier.model import BaseModel, from_mapping
+from stream_notifier.PushMethod import Push
 
+from .base import CheckerBase
 from .debug import DebugChecker
 from .twitch import RequestInstance as TwitchChecker
 from .twitter import TwitterChecker
@@ -33,9 +36,9 @@ class StreamCheckerConfig(BaseModel):
 
 
 class StreamChecker:
-    def __init__(self, config, push, cache_file: pathlib.Path):
+    def __init__(self, config, push: Push, cache_file: pathlib.Path):
         self.config = StreamCheckerConfig.parse_obj(config)
-        self.instance = self.config.type(config)
+        self.instance: CheckerBase = self.config.type(config)
         self.push = push
         self.cache_file = cache_file
         self.last_reported_http = 0
@@ -81,24 +84,27 @@ class StreamChecker:
                     pass
 
     async def run_once(self):
-        info = await self.instance.run_check()
-        last_notified = self.get_cache() or {}
+        info = Dict(await self.instance.run_check())
+
         if not info:
             return
 
-        cached_info = self.set_cache(info)
+        last_notified = Dict(self.get_cache())
+        await self.instance.process_result(info)
+        cached_content = self.set_cache(info)
         summary = self.instance.summary(info)
 
         try:
             if not self.instance.verify_push(last_notified, info):
-                return cached_info
+                return cached_content
+
         except ValueError as e:
             await self.send_report(
                 title=f"Push notification cancelled!🚫",
                 desc=f"Reason: {str(e)}",
                 fields=summary,
             )
-            return cached_info
+            return cached_content
 
         await self.send_report(
             title=f"Stream found for {self.config.type}", fields=summary
@@ -112,7 +118,7 @@ class StreamChecker:
             )
             logger.exception(e)
 
-        return cached_info
+        return cached_content
 
     async def run(self):
         await self.send_report(

@@ -3,6 +3,7 @@ from functools import cache
 from loguru import logger
 from stream_notifier.model import BaseModel, CheckerConfig, Color
 
+from ..base import CheckerBase
 from .twitch_api_client import TwitchClient
 
 
@@ -23,7 +24,7 @@ class Config(CheckerConfig):
         )
 
 
-class RequestInstance:
+class RequestInstance(CheckerBase):
     def __init__(self, config):
         self.config = Config.parse_obj(config)
         self.client = self.config.create_client()
@@ -38,15 +39,18 @@ class RequestInstance:
 
         output = self.client.get_stream(user.id, log=False)
 
-        if output and output.type == "live":
+        if output:
             return output.as_dict()
 
     @classmethod
     def verify_push(cls, last_notified, current_info):
-        if current_info.get("started_at") == last_notified.get("started_at"):
+        if current_info.type != "live":
             return False
 
-        if current_info.get("title") == last_notified.get("title"):
+        if current_info.started_at == last_notified.started_at:
+            return False
+
+        if current_info.title == last_notified.title:
             raise ValueError("Twitch stream title did not change!")
 
         return True
@@ -54,10 +58,10 @@ class RequestInstance:
     @classmethod
     def summary(cls, info):
         return {
-            "Started": info["started_at"],
-            "Title": info["title"],
-            "Type": info["type"],
-            "Content": info["game_name"],
-            "Delay": info["delay"],
-            "Live": info["is_live"],
+            "Started": info.started_at,
+            "Title": info.title,
+            "Type": info.type,
+            "Content": info.game_name,
+            "Delay": info.delay,
+            "Live": info.is_live,
         }

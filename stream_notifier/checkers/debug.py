@@ -3,13 +3,15 @@ from loguru import logger
 from yaml import safe_load
 from stream_notifier.model import CheckerConfig, Color
 
+from .base import CheckerBase
+
 
 class Config(CheckerConfig):
     file: pathlib.Path
     color: Color = "00ff00"
 
 
-class DebugChecker:
+class DebugChecker(CheckerBase):
     def __init__(self, config):
         self.config = Config.parse_obj(config)
         logger.info("Target File: {}", self.config.file)
@@ -21,10 +23,10 @@ class DebugChecker:
 
     @classmethod
     def verify_push(cls, last_notified, current_info):
-        if current_info.get("id") == last_notified.get("id"):
+        if current_info.id == last_notified.id:
             return False
 
-        if not current_info.get("should_push"):
+        if not current_info.should_push:
             raise ValueError("Push is disabled!")
 
         return True
