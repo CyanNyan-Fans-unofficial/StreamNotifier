@@ -2,9 +2,12 @@ import asyncio
 import json
 import pathlib
 import traceback
+from time import time
 from typing import Optional
 
+from aiohttp import ClientSession, ClientTimeout
 from loguru import logger
+from pydantic import HttpUrl
 from streamnotifier.model import BaseModel, from_mapping
 
 from .debug import DebugChecker
@@ -25,6 +28,8 @@ class StreamCheckerConfig(BaseModel):
     report: list[str]
     push_contents: dict[str, str]
     interval: Optional[float]
+    report_url: Optional[HttpUrl]
+    report_interval: int = 45
 
 
 class StreamChecker:
@@ -33,6 +38,7 @@ class StreamChecker:
         self.instance = self.config.type(config)
         self.push = push
         self.cache_file = cache_file
+        self.last_reported_http = 0
 
     def get_cache(self):
         try:
@@ -46,8 +52,11 @@ class StreamChecker:
     def set_cache(self, info):
         # Remove internal attributes that starts with _
         dump = {key: value for key, value in info.items() if not key.startswith("_")}
-        with self.cache_file.open("w") as f:
-            json.dump(dump, f, default=lambda o: f"<<{type(o).__qualname__}>>")
+        content = json.dumps(
+            dump, default=lambda o: f"<<{type(o).__qualname__}>>", indent=2
+        )
+        self.cache_file.write_text(content)
+        return content
 
     async def sleep(self):
         await asyncio.sleep(self.interval)
@@ -60,25 +69,36 @@ class StreamChecker:
         args = {"color": self.instance.config.color} | kwargs
         self.push.send_report(self.config.report, **args)
 
+    async def send_report_http(self, text=None):
+        if not self.config.report_url:
+            return
+
+        if time() - self.last_reported_http > self.config.report_interval:
+            self.last_reported_http = time()
+            timeout = ClientTimeout(total=10)
+            async with ClientSession(timeout=timeout) as session:
+                async with session.post(self.config.report_url, data=text) as response:
+                    pass
+
     async def run_once(self):
         info = await self.instance.run_check()
         last_notified = self.get_cache() or {}
         if not info:
             return
 
-        self.set_cache(info)
+        cached_info = self.set_cache(info)
         summary = self.instance.summary(info)
 
         try:
             if not self.instance.verify_push(last_notified, info):
-                return
+                return cached_info
         except ValueError as e:
             await self.send_report(
                 title=f"Push notification cancelled!🚫",
                 desc=f"Reason: {str(e)}",
                 fields=summary,
             )
-            return
+            return cached_info
 
         await self.send_report(
             title=f"Stream found for {self.config.type}", fields=summary
@@ -91,6 +111,8 @@ class StreamChecker:
                 title="Notification Push failed!❌", desc=f"{type(e).__name__}: {str(e)}"
             )
             logger.exception(e)
+
+        return cached_info
 
     async def run(self):
         await self.send_report(
@@ -108,9 +130,14 @@ class StreamChecker:
             },
         )
 
+        report_tasks = set()
+
         while True:
             await self.sleep()
             try:
-                await self.run_once()
+                info = await self.run_once()
+                task = asyncio.create_task(self.send_report_http(info))
+                report_tasks.add(task)
+                task.add_done_callback(report_tasks.discard)
             except Exception:
                 traceback.print_exc()
