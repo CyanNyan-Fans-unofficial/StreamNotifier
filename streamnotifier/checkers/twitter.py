@@ -41,6 +41,10 @@ class TwitterChecker:
     def verify_push(cls, last_notified, current_info):
         if not last_notified.get("id"):
             raise ValueError("Last notified ID does not exist!")
+        if not last_notified["source"] != current_info["source"]:
+            raise ValueError(
+                f"Twitter has changed! {last_notified['source']} -> {current_info['source']}"
+            )
         return last_notified["id"] != current_info["id"]
 
     @classmethod
