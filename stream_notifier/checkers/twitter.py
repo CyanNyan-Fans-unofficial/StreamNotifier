@@ -13,6 +13,8 @@ class Config(CheckerConfig):
     access_token: str
     access_token_secret: str
     username: str
+    include_retweets: bool = True
+    include_quoted: bool = True
 
     def create_client(self):
         auth = tweepy.OAuthHandler(
@@ -40,8 +42,7 @@ class TwitterChecker(CheckerBase):
         flatten_dict(info, "user")
         info.url = f"https://vxtwitter.com/{info.user_screen_name}/status/{info.id}"
 
-    @classmethod
-    def verify_push(cls, last_notified, current_info):
+    def verify_push(self, last_notified, current_info):
         if not last_notified.id:
             raise ValueError("Last notified ID does not exist!")
 
@@ -49,6 +50,12 @@ class TwitterChecker(CheckerBase):
             raise ValueError(
                 f"Twitter user has changed! {last_notified.user_screen_name} -> {current_info.user_screen_name}"
             )
+
+        if current_info.retweeted and not self.config.include_retweets:
+            return False
+
+        if current_info.is_quote_status and not self.config.include_quoted:
+            return False
 
         return last_notified.id != current_info.id
 

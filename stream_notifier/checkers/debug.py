@@ -21,8 +21,7 @@ class DebugChecker(CheckerBase):
             data = safe_load(f)
         return data
 
-    @classmethod
-    def verify_push(cls, last_notified, current_info):
+    def verify_push(self, last_notified, current_info):
         if current_info.id == last_notified.id:
             return False
 

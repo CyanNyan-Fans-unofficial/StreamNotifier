@@ -42,8 +42,7 @@ class RequestInstance(CheckerBase):
         if output:
             return output.as_dict()
 
-    @classmethod
-    def verify_push(cls, last_notified, current_info):
+    def verify_push(self, last_notified, current_info):
         if current_info.type != "live":
             return False
 
