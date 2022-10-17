@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "streamnotifier"
+name = "stream-notifier"
 version = "0.1.0"
 description = ""
 authors = []

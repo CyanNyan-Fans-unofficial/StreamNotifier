@@ -1,7 +1,7 @@
 from functools import cache
 
 from loguru import logger
-from streamnotifier.model import BaseModel, CheckerConfig, Color
+from stream_notifier.model import BaseModel, CheckerConfig, Color
 
 from .twitch_api_client import TwitchClient
 

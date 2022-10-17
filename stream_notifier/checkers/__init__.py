@@ -8,7 +8,7 @@ from typing import Optional
 from aiohttp import ClientSession, ClientTimeout
 from loguru import logger
 from pydantic import HttpUrl
-from streamnotifier.model import BaseModel, from_mapping
+from stream_notifier.model import BaseModel, from_mapping
 
 from .debug import DebugChecker
 from .twitch import RequestInstance as TwitchChecker

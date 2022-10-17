@@ -1,7 +1,7 @@
 import tweepy
 import tweepy.models
 
-from streamnotifier.model import CheckerConfig, Color
+from stream_notifier.model import CheckerConfig, Color
 
 
 class Config(CheckerConfig):

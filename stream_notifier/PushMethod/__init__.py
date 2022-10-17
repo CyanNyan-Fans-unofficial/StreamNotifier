@@ -4,7 +4,7 @@ from loguru import logger
 from typing import Optional
 
 from .task import PushTask
-from streamnotifier.model import BaseModel, from_mapping
+from stream_notifier.model import BaseModel, from_mapping
 
 from .discord_push import DiscordPush
 from .telegram_push import TelegramPush

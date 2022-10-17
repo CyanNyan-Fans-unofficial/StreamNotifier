@@ -1,7 +1,7 @@
 from typing import Optional
 
 from loguru import logger
-from streamnotifier.model import CheckerConfig, Color
+from stream_notifier.model import CheckerConfig, Color
 
 from .youtube_api_client import build_client
 

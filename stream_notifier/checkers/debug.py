@@ -1,7 +1,7 @@
 import pathlib
 from loguru import logger
 from yaml import safe_load
-from streamnotifier.model import CheckerConfig, Color
+from stream_notifier.model import CheckerConfig, Color
 
 
 class Config(CheckerConfig):

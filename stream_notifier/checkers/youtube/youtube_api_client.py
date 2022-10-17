@@ -73,7 +73,7 @@ def build_client(
             # Out-Of-Band (OOB) flow is deprecated, use run_local_server only
             credential = flow.run_local_server()
 
-            print('Please copy the following token into the config:')
+            print("Please copy the following token into the config:")
             print()
             print(credential.to_json())
 
