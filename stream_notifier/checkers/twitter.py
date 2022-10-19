@@ -15,6 +15,8 @@ class Config(CheckerConfig):
     username: str
     include_retweets: bool = True
     include_quoted: bool = True
+    include_replies: bool = True
+    debug_count: int = 0
 
     def create_client(self):
         auth = tweepy.OAuthHandler(
@@ -23,24 +25,28 @@ class Config(CheckerConfig):
             self.access_token,
             self.access_token_secret,
         )
-        return tweepy.API(auth)
+        return tweepy.API(auth, timeout=5)
 
 
 class TwitterChecker(CheckerBase):
     def __init__(self, config):
         self.config = Config.parse_obj(config)
         self.api = self.config.create_client()
+        self.debug = self.config.debug_count
 
     async def run_check(self):
         tweets = self.api.user_timeline(
             screen_name=self.config.username, tweet_mode="extended"
         )
         if tweets:
-            return tweets[0]._json
+            self.debug = tweet_idx = max(self.debug - 1, 0)
+            return tweets[tweet_idx]._json
 
     async def process_result(self, info):
         flatten_dict(info, "user")
         info.url = f"https://vxtwitter.com/{info.user_screen_name}/status/{info.id}"
+        info.text_no_mention = info.full_text.replace("@", "@\u200c")
+        info.is_reply = info.in_reply_to_status_id is not None
 
     def verify_push(self, last_notified, current_info):
         if not last_notified.id:
@@ -57,8 +63,11 @@ class TwitterChecker(CheckerBase):
         if current_info.is_quote_status and not self.config.include_quoted:
             return False
 
+        if current_info.is_reply and not self.config.include_replies:
+            return False
+
         return last_notified.id != current_info.id
 
     @classmethod
     def summary(cls, info):
-        return {"ID": info.id, "User": info.user_screen_name}
+        return {"User": info.user_screen_name, "URL": info.url}
