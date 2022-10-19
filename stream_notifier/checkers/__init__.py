@@ -32,7 +32,7 @@ class StreamCheckerConfig(BaseModel):
     push_contents: dict[str, str]
     interval: Optional[float]
     report_url: Optional[HttpUrl]
-    report_interval: int = 45
+    report_interval: int = 20
 
 
 class StreamChecker:
