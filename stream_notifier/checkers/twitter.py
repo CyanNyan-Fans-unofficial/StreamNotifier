@@ -57,7 +57,7 @@ class TwitterChecker(CheckerBase):
                 f"Twitter user has changed! {last_notified.user_screen_name} -> {current_info.user_screen_name}"
             )
 
-        if current_info.retweet_status and not self.config.include_retweets:
+        if current_info.retweeted_status and not self.config.include_retweets:
             return False
 
         if current_info.is_quote_status and not self.config.include_quoted:
