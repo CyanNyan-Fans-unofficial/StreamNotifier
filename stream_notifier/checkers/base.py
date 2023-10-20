@@ -1,7 +1,7 @@
 class CheckerBase:
     """ABC for all stream checkers"""
 
-    async def run_check(self):
+    async def run_check(self, last_notified):
         """Check for requested resource, and return the latest instance in a dict."""
 
         raise NotImplementedError()

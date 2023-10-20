@@ -40,17 +40,19 @@ class StreamChecker:
         self.config = StreamCheckerConfig.parse_obj(config)
         self.instance: CheckerBase = self.config.type(config)
         self.push = push
+        self.cache = None
         self.cache_file = cache_file
         self.last_reported_http = 0
 
     def get_cache(self):
-        try:
-            with self.cache_file.open() as f:
-                data = json.load(f)
-        except Exception:
-            return {}
+        if self.cache is None:
+            try:
+                with self.cache_file.open() as f:
+                    self.cache = json.load(f)
+            except Exception:
+                self.cache = {}
 
-        return data
+        return self.cache
 
     def set_cache(self, info):
         # Remove internal attributes that starts with _
@@ -59,6 +61,7 @@ class StreamChecker:
             dump, default=lambda o: f"<<{type(o).__qualname__}>>", indent=2
         )
         self.cache_file.write_text(content)
+        self.cache = json.loads(content)
         return content
 
     async def sleep(self):
@@ -84,12 +87,12 @@ class StreamChecker:
                     pass
 
     async def run_once(self):
-        info = Dict(await self.instance.run_check())
+        last_notified = Dict(self.get_cache())
+        info = Dict(await self.instance.run_check(last_notified))
 
         if not info:
             return
 
-        last_notified = Dict(self.get_cache())
         await self.instance.process_result(info)
         cached_content = self.set_cache(info)
         summary = self.instance.summary(info)

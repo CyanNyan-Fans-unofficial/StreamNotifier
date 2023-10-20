@@ -34,7 +34,7 @@ class RequestInstance(CheckerBase):
     def get_user(self):
         return self.client.get_user(self.config.channel_name)
 
-    async def run_check(self):
+    async def run_check(self, last_notified):
         user = self.get_user()
 
         output = self.client.get_stream(user.id, log=False)

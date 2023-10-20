@@ -42,11 +42,11 @@ class TwitterChecker(CheckerBase):
         self.config = Config.parse_obj(config)
         self.api = self.config.create_client()
 
-    async def run_check(self):
+    async def run_check(self, last_notified):
         # Use home_timeline instead of user_timeline due to Twitter's new restrictions
         tweets = self.api.home_timeline(tweet_mode="extended")
-        for tweet in tweets:
-            if self.config.match_name(tweet.user.screen_name):
+        for tweet in reversed(tweets):
+            if last_notified.id is None or last_notified.id < tweet.id:
                 return tweet._json
 
     async def process_result(self, info):
@@ -61,6 +61,9 @@ class TwitterChecker(CheckerBase):
     def verify_push(self, last_notified, current_info):
         if not last_notified.id:
             raise ValueError("Last notified ID does not exist!")
+
+        if not self.config.match_name(current_info.user_screen_name):
+            return False
 
         if current_info.retweeted_status and not self.config.include_retweets:
             return False

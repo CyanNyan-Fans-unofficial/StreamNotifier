@@ -16,7 +16,7 @@ class DebugChecker(CheckerBase):
         self.config = Config.parse_obj(config)
         logger.info("Target File: {}", self.config.file)
 
-    async def run_check(self):
+    async def run_check(self, last_notified):
         with self.config.file.open() as f:
             data = safe_load(f)
         return data

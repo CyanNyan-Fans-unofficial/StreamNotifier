@@ -23,7 +23,7 @@ class RequestInstance(CheckerBase):
         self.client = self.config.create_client()
         logger.info("Application successfully authorized.")
 
-    async def run_check(self):
+    async def run_check(self, last_notified):
         active = self.client.get_active_user_broadcasts(max_results=1)
         if active:
             # gotcha! there's active stream
