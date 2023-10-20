@@ -14,9 +14,9 @@ from stream_notifier.PushMethod import Push
 
 from .base import CheckerBase
 from .debug import DebugChecker
-from .twitch import RequestInstance as TwitchChecker
+from .twitch import TwitchChecker
 from .twitter import TwitterChecker
-from .youtube import RequestInstance as YoutubeChecker
+from .youtube import YoutubeChecker
 
 
 class StreamCheckerConfig(BaseModel):

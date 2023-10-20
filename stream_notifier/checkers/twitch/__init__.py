@@ -24,7 +24,7 @@ class Config(CheckerConfig):
         )
 
 
-class RequestInstance(CheckerBase):
+class TwitchChecker(CheckerBase):
     def __init__(self, config):
         self.config = Config.parse_obj(config)
         self.client = self.config.create_client()

@@ -17,7 +17,7 @@ class Config(CheckerConfig):
         return build_client(client_secret=self.client_secret, token=self.token)
 
 
-class RequestInstance(CheckerBase):
+class YoutubeChecker(CheckerBase):
     def __init__(self, config):
         self.config = Config.parse_obj(config)
         self.client = self.config.create_client()
