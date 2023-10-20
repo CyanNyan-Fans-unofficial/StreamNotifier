@@ -14,6 +14,7 @@ class TelegramPush(Push):
         self.token = config["token"]
         self.chat_ids = config["chat id"]
         self.pin = config.get("pin", False)
+        self.skip_verify = config.get("skip_verify", False)
 
         if not all((self.token, self.chat_ids)):
             logger.info("One or more Telegram parameters are empty, skipping.")
@@ -22,6 +23,10 @@ class TelegramPush(Push):
         self.bot = telegram.Bot(token=self.token)
 
     def verify(self):
+        if self.skip_verify:
+            logger.info("Skip telegram token verification")
+            return
+
         logger.info("Verification of telegram token started.")
 
         updates = self.bot.get_updates()
