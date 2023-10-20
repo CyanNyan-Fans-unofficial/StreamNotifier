@@ -18,16 +18,21 @@ class TwitterPush(Push):
             logger.info("One or more Twitter parameters empty, skipping.")
             raise ValueError("One or more Twitter parameters empty, skipping.")
 
-        auth = tweepy.OAuthHandler(self.api_key, self.api_secret, self.token, self.token_secret)
-        self.api = tweepy.API(auth)
+        # Use API v2 to send tweet
+        self.api = tweepy.Client(
+            consumer_key=self.api_key,
+            consumer_secret=self.api_secret,
+            access_token=self.token,
+            access_token_secret=self.token_secret,
+        )
 
     def verify(self):
         logger.info("Verifying Twitter auth is not needed, skipping.")
 
     def send(self, content):
-        self.api.update_status(content)
+        self.api.create_tweet(text=content)
 
         logger.info("Notified to twitter.")
 
     def report(self, **kwargs):
-        raise NotImplementedError('Twitter cannot be a valid report destination.')
+        raise NotImplementedError("Twitter cannot be a valid report destination.")

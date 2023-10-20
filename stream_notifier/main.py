@@ -35,6 +35,11 @@ async def stream_notifier_cli():
         default=False,
         help="Enable test mode, this does not actually push to platforms.",
     )
+    parser.add_argument(
+        "--push-test",
+        nargs=2,
+        help="Send a test push into specific push destination and quit.",
+    )
     args = parser.parse_args()
 
     # Load the config meow meow
@@ -45,6 +50,11 @@ async def stream_notifier_cli():
     push_methods_config = config.pop("push methods")
     push = Push(push_methods_config, test_mode=args.test)
     logger.info(f'Verified push methods: {", ".join(push.methods.keys())}')
+
+    if args.push_test:
+        destination, content = args.push_test
+        push.send_push({destination: content})
+        return
 
     # Initialize stream checkers
     coro_list = []
