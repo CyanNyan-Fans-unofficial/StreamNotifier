@@ -60,7 +60,8 @@ class StreamChecker:
         content = json.dumps(
             dump, default=lambda o: f"<<{type(o).__qualname__}>>", indent=2
         )
-        self.cache_file.write_text(content)
+        if self.cache_file:
+            self.cache_file.write_text(content)
         self.cache = json.loads(content)
         return content
 

@@ -2,7 +2,7 @@ import tweepy
 import tweepy.models
 from stream_notifier.model import CheckerConfig, Color
 from stream_notifier.utils import flatten_dict
-from pydantic import validator
+from pydantic import validator, Field
 
 from .base import CheckerBase
 
@@ -13,10 +13,11 @@ class Config(CheckerConfig):
     api_secret_key: str
     access_token: str
     access_token_secret: str
-    username: str | list
+    username: str | list[str]
     include_retweets: bool = True
     include_quoted: bool = True
     include_replies: bool = True
+    skip_tags: list[str] = Field(default_factory=list)
 
     @validator("username")
     def convert_username(cls, username):
@@ -45,8 +46,10 @@ class TwitterChecker(CheckerBase):
     async def run_check(self, last_notified):
         # Use home_timeline instead of user_timeline due to Twitter's new restrictions
         tweets = self.api.home_timeline(tweet_mode="extended")
+        if not last_notified.id:
+            return tweets[0]._json
         for tweet in reversed(tweets):
-            if last_notified.id is None or last_notified.id < tweet.id:
+            if last_notified.id < tweet.id:
                 return tweet._json
 
     async def process_result(self, info):
@@ -73,6 +76,11 @@ class TwitterChecker(CheckerBase):
 
         if current_info.in_reply_to_status_id is not None and not self.config.include_replies:
             return False
+
+        for hashtag in current_info.entities.hashtags:
+            tag = hashtag.text
+            if tag in self.config.skip_tags:
+                raise ValueError(f"Hashtag is skipped! #{tag}")
 
         # Check if current ID is newer than last notified ID
         return last_notified.id < current_info.id

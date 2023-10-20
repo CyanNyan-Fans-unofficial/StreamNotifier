@@ -40,6 +40,9 @@ async def stream_notifier_cli():
         nargs=2,
         help="Send a test push into specific push destination and quit.",
     )
+    parser.add_argument(
+        "--no-cache", action="store_true", help="Do not use cache file."
+    )
     args = parser.parse_args()
 
     # Load the config meow meow
@@ -59,7 +62,10 @@ async def stream_notifier_cli():
     # Initialize stream checkers
     coro_list = []
     for name, service_config in config.items():
-        cache_file = pathlib.Path(args.cache_dir) / f"cache-{name}.json"
+        if args.no_cache:
+            cache_file = None
+        else:
+            cache_file = pathlib.Path(args.cache_dir) / f"cache-{name}.json"
         checker = StreamChecker(service_config, push, cache_file)
         logger.info(
             "Loaded stream checker={}, type={}, test_mode={}",
