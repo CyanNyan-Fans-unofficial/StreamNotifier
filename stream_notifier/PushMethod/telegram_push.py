@@ -1,4 +1,3 @@
-import traceback
 from html import escape
 from typing import Union
 
@@ -66,8 +65,7 @@ class TelegramPush(Push):
                     self.bot.pin_chat_message(message.chat_id, message.message_id)
                 logger.info("Notified to telegram channel {}.", chat_id)
             except Exception:
-                traceback.print_exc()
-                logger.warning("Failed to send message or pin: chat id {}.", chat_id)
+                logger.exception("Failed to send message or pin: chat id {}.", chat_id)
 
     def report(
         self,
@@ -97,5 +95,5 @@ class TelegramPush(Push):
                 self.bot.send_message(
                     chat_id, "\n".join(message), parse_mode=ParseMode.HTML
                 )
-            except Exception as err:
-                traceback.print_exception(err, err, err.__traceback__)
+            except Exception:
+                logger.exception()

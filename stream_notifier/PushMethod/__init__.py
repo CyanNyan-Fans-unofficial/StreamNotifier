@@ -1,5 +1,3 @@
-import traceback
-
 from loguru import logger
 from typing import Optional
 
@@ -32,12 +30,11 @@ class Push:
             try:
                 instance.verify()
             except Exception as err:
-                logger.warning(
+                logger.exception(
                     "Got Error during verifying {} ({})",
                     name,
                     push_config.type.__name__,
                 )
-                traceback.print_exception(err, err, err.__traceback__, limit=2)
             else:
                 self.methods[name] = instance
                 self.comments[name] = push_config.comment or push_config.type.__name__
@@ -57,7 +54,7 @@ class Push:
             try:
                 task.send()
             except Exception:
-                traceback.print_exc()
+                logger.exception()
 
     def iter_push_tasks(self, push_contents: dict[str, str], **kwargs):
         for name, content in push_contents.items():
@@ -85,4 +82,4 @@ class Push:
             try:
                 module.report(**params)
             except Exception:
-                traceback.print_exc()
+                logger.exception()

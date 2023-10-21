@@ -11,7 +11,6 @@ from .checkers import StreamChecker
 async def stream_notifier_cli():
     # Parsing arguments from command
     parser = argparse.ArgumentParser()
-
     parser.add_argument(
         "-p",
         "--path",
@@ -19,7 +18,6 @@ async def stream_notifier_cli():
         default="config.yml",
         help="Path to configuration json file. Default path is 'config.yml' on the working directory",
     )
-
     parser.add_argument(
         "-c",
         "--cache-dir",
@@ -27,7 +25,6 @@ async def stream_notifier_cli():
         default="cache",
         help="Directory where cache files will be. Default path is 'cache' on the working directory",
     )
-
     parser.add_argument(
         "-t",
         "--test",
@@ -52,19 +49,21 @@ async def stream_notifier_cli():
     # Verify push methods
     push_methods_config = config.pop("push methods")
     push = Push(push_methods_config, test_mode=args.test)
-    logger.info(f'Verified push methods: {", ".join(push.methods.keys())}')
 
+    method_names = ", ".join(push.methods.keys())
+    logger.info(f"Verified push methods: {method_names}")
+
+    # Push test mode: send push and exit
     if args.push_test:
         destination, content = args.push_test
         push.send_push({destination: content})
         return
 
     # Initialize stream checkers
-    coro_list = []
+    checker_loops = []
     for name, service_config in config.items():
-        if args.no_cache:
-            cache_file = None
-        else:
+        cache_file = None
+        if not args.no_cache:
             cache_file = pathlib.Path(args.cache_dir) / f"cache-{name}.json"
         checker = StreamChecker(service_config, push, cache_file)
         logger.info(
@@ -73,6 +72,6 @@ async def stream_notifier_cli():
             checker.config.type,
             args.test,
         )
-        coro_list.append(checker.run())
+        checker_loops.append(checker.run())
 
-    await asyncio.gather(*coro_list)
+    await asyncio.gather(*checker_loops)

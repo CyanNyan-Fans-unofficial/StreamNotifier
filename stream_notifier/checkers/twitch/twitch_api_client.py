@@ -3,7 +3,6 @@ Simple Twitch API wrapper of what I frequently use.
 """
 
 import time
-import traceback
 from pprint import pformat
 from datetime import datetime
 from typing import Dict, Union, List
@@ -139,9 +138,7 @@ class TwitchClient:
             json_ = req.json()
         except Exception as err:
             logger.critical("response: {}\n{}", req, req.text)
-            traceback.print_exc()
-            logger.critical("Got {} Parsing JSON, content:\n{}", type(err).__name__, req.text)
-
+            logger.exception("Got error parsing JSON, content:\n{}", req.text)
             return False
 
         if log_response:

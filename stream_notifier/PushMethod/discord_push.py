@@ -1,5 +1,3 @@
-import traceback
-
 from pprint import pformat
 
 from loguru import logger
@@ -48,11 +46,11 @@ class DiscordPush(Push):
                     embed.add_embed_field(name=title, value=str(value))
 
             except Exception:
-                traceback.print_exc(limit=3)
+                logger.exception()
 
         result = DiscordWebhook(self.webhook_url, embeds=[embed]).execute()
 
         try:
             result.raise_for_status()
-        except Exception as err:
-            traceback.print_exception(err, err, err.__traceback__)
+        except Exception:
+            logger.exception()

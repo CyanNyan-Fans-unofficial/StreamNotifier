@@ -1,7 +1,6 @@
 import asyncio
 import json
 import pathlib
-import traceback
 from time import time
 from typing import Optional
 
@@ -150,4 +149,4 @@ class StreamChecker:
                 report_tasks.add(task)
                 task.add_done_callback(report_tasks.discard)
             except Exception:
-                traceback.print_exc()
+                logger.exception("Error while checking for stream")
