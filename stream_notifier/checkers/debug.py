@@ -1,9 +1,11 @@
 import pathlib
+
 from loguru import logger
 from yaml import safe_load
-from stream_notifier.model import CheckerConfig, Color
 
-from .base import CheckerBase
+from stream_notifier.model import Color
+
+from .base import CheckerBase, CheckerConfig
 
 
 class Config(CheckerConfig):
@@ -13,7 +15,7 @@ class Config(CheckerConfig):
 
 class DebugChecker(CheckerBase):
     def __init__(self, config):
-        self.config = Config.parse_obj(config)
+        self.config = Config.model_validate(config)
         logger.info("Target File: {}", self.config.file)
 
     async def run_check(self, last_notified):

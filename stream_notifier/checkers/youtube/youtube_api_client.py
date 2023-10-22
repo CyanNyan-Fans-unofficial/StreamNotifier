@@ -5,20 +5,19 @@ You can manually specify it when building resource file.
 
 Readability is 'amazing', even I can't read well. Will add docstrings when I can.
 """
+import datetime
 import inspect
 import json
 import os
-import datetime
 from typing import Tuple, Union
 
 import googleapiclient.discovery
 import googleapiclient.errors
-from google_auth_oauthlib.flow import InstalledAppFlow
+from dateutil.parser import isoparse
+from google.auth.exceptions import RefreshError
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google.auth.exceptions import RefreshError
-from dateutil.parser import isoparse
-
+from google_auth_oauthlib.flow import InstalledAppFlow
 
 scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
 

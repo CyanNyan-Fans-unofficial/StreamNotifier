@@ -18,9 +18,13 @@ google-auth-oauthlib = "^0.5.2"
 PyYAML = "^6.0"
 feedparser = "^6.0.10"
 aiohttp = "^3.8.3"
-pydantic = "^1.10.2"
+pydantic = "<2.4"
 addict = "^2.4.0"
+pydantic-extra-types = "^2.1.0"
 
+
+[tool.poetry.group.dev.dependencies]
+bump-pydantic = "^0.7.0"
 
 [build-system]
 requires = ["poetry-core"]

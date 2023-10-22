@@ -3,9 +3,9 @@ Simple Twitch API wrapper of what I frequently use.
 """
 
 import time
-from pprint import pformat
 from datetime import datetime
-from typing import Dict, Union, List
+from pprint import pformat
+from typing import Dict, List, Union
 
 import requests
 from loguru import logger

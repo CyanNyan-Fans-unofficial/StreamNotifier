@@ -1,17 +1,18 @@
 from typing import Optional
 
 from loguru import logger
-from stream_notifier.model import CheckerConfig, Color
 
-from ..base import CheckerBase
+from stream_notifier.model import Color
+
+from ..base import CheckerBase, CheckerConfig
 from .youtube_api_client import build_client
 
 
 class Config(CheckerConfig):
     color: Color = "ff0000"
-    check_interval = 10
+    check_interval: int = 10
     client_secret: str
-    token: Optional[str]
+    token: Optional[str] = None
 
     def create_client(self):
         return build_client(client_secret=self.client_secret, token=self.token)
@@ -19,7 +20,7 @@ class Config(CheckerConfig):
 
 class YoutubeChecker(CheckerBase):
     def __init__(self, config):
-        self.config = Config.parse_obj(config)
+        self.config = Config.model_validate(config)
         self.client = self.config.create_client()
         logger.info("Application successfully authorized.")
 

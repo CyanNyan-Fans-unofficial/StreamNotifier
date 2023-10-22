@@ -8,6 +8,7 @@ from addict import Dict
 from aiohttp import ClientSession, ClientTimeout
 from loguru import logger
 from pydantic import HttpUrl
+
 from stream_notifier.model import BaseModel, from_mapping
 from stream_notifier.PushMethod import Push
 
@@ -17,26 +18,26 @@ from .twitch import TwitchChecker
 from .twitter import TwitterChecker
 from .youtube import YoutubeChecker
 
+_stream_checkers = {
+    "twitch": TwitchChecker,
+    "youtube": YoutubeChecker,
+    "twitter": TwitterChecker,
+    "debug": DebugChecker,
+}
 
-class StreamCheckerConfig(BaseModel):
-    type: from_mapping(
-        {
-            "twitch": TwitchChecker,
-            "youtube": YoutubeChecker,
-            "twitter": TwitterChecker,
-            "debug": DebugChecker,
-        }
-    )
+
+class StreamCheckerGeneralConfig(BaseModel):
+    type: from_mapping(_stream_checkers)
     report: list[str]
     push_contents: dict[str, str]
-    interval: Optional[float]
-    report_url: Optional[HttpUrl]
+    interval: Optional[float] = None
+    report_url: Optional[HttpUrl] = None
     report_interval: int = 20
 
 
 class StreamChecker:
     def __init__(self, config, push: Push, cache_file: pathlib.Path):
-        self.config = StreamCheckerConfig.parse_obj(config)
+        self.config = StreamCheckerGeneralConfig.model_validate(config)
         self.instance: CheckerBase = self.config.type(config)
         self.push = push
         self.cache = None
@@ -83,7 +84,7 @@ class StreamChecker:
             self.last_reported_http = time()
             timeout = ClientTimeout(total=10)
             async with ClientSession(timeout=timeout) as session:
-                async with session.post(self.config.report_url, data=text) as response:
+                async with session.post(str(self.config.report_url), data=text):
                     pass
 
     async def run_once(self):
@@ -103,7 +104,7 @@ class StreamChecker:
 
         except ValueError as e:
             await self.send_report(
-                title=f"Push notification cancelled!🚫",
+                title="Push notification cancelled!🚫",
                 desc=f"Reason: {str(e)}",
                 fields=summary,
             )
@@ -125,7 +126,7 @@ class StreamChecker:
 
     async def run(self):
         await self.send_report(
-            title=f"Stream Notifier Started",
+            title="Stream Notifier Started",
             fields={
                 "Active Push Destination": "\n".join(
                     f"{name}: {self.push.comments[name]}"

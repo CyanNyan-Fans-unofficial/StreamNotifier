@@ -1,9 +1,9 @@
 from pprint import pformat
-
-from loguru import logger
-from discord_webhook import DiscordWebhook, DiscordEmbed
-import requests
 from typing import Union
+
+import requests
+from discord_webhook import DiscordEmbed, DiscordWebhook
+from loguru import logger
 
 from .base import Push
 

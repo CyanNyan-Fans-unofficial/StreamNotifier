@@ -2,10 +2,11 @@ import argparse
 import asyncio
 import pathlib
 
-from .PushMethod import Push
 from loguru import logger
 from yaml import safe_load
+
 from .checkers import StreamChecker
+from .PushMethod import Push
 
 
 async def stream_notifier_cli():

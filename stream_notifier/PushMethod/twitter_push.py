@@ -1,5 +1,3 @@
-from typing import Union
-
 import tweepy
 from loguru import logger
 

@@ -1,3 +1,11 @@
+from stream_notifier.model import BaseModel, Color
+
+
+class CheckerConfig(BaseModel):
+    color: Color = 0
+    check_interval: int = 10
+
+
 class CheckerBase:
     """ABC for all stream checkers"""
 

@@ -1,10 +1,12 @@
 import tweepy
 import tweepy.models
-from stream_notifier.model import CheckerConfig, Color
-from stream_notifier.utils import flatten_dict
-from pydantic import validator, Field
+from pydantic import Field, field_validator
+from loguru import logger
 
-from .base import CheckerBase
+from stream_notifier.model import Color
+from stream_notifier.utils import flatten_dict
+
+from .base import CheckerBase, CheckerConfig
 
 
 class Config(CheckerConfig):
@@ -19,11 +21,12 @@ class Config(CheckerConfig):
     include_replies: bool = True
     skip_tags: list[str] = Field(default_factory=list)
 
-    @validator("username")
+    @field_validator("username")
+    @classmethod
     def convert_username(cls, username):
         if type(username) is str:
             return [username.lower()]
-        return [name.lower for name in username]
+        return [name.lower() for name in username]
 
     def create_client(self):
         auth = tweepy.OAuthHandler(
@@ -40,8 +43,9 @@ class Config(CheckerConfig):
 
 class TwitterChecker(CheckerBase):
     def __init__(self, config):
-        self.config = Config.parse_obj(config)
+        self.config = Config.model_validate(config)
         self.api = self.config.create_client()
+        logger.info("Twitter check target: {}", ", ".join(self.config.username))
 
     async def run_check(self, last_notified):
         # Use home_timeline instead of user_timeline due to Twitter's new restrictions
@@ -74,7 +78,10 @@ class TwitterChecker(CheckerBase):
         if current_info.quoted_status and not self.config.include_quoted:
             return False
 
-        if current_info.in_reply_to_status_id is not None and not self.config.include_replies:
+        if (
+            current_info.in_reply_to_status_id is not None
+            and not self.config.include_replies
+        ):
             return False
 
         for hashtag in current_info.entities.hashtags:

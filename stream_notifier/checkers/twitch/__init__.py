@@ -1,9 +1,10 @@
 from functools import cache
 
 from loguru import logger
-from stream_notifier.model import BaseModel, CheckerConfig, Color
 
-from ..base import CheckerBase
+from stream_notifier.model import BaseModel, Color
+
+from ..base import CheckerBase, CheckerConfig
 from .twitch_api_client import TwitchClient
 
 
@@ -14,7 +15,7 @@ class PollingApi(BaseModel):
 
 class Config(CheckerConfig):
     color: Color = "a364fe"
-    check_interval = 2
+    check_interval: int = 2
     channel_name: str
     polling_api: PollingApi
 
@@ -26,7 +27,7 @@ class Config(CheckerConfig):
 
 class TwitchChecker(CheckerBase):
     def __init__(self, config):
-        self.config = Config.parse_obj(config)
+        self.config = Config.model_validate(config)
         self.client = self.config.create_client()
         logger.info("Target Channel: {}", self.config.channel_name)
 

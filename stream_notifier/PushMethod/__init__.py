@@ -1,19 +1,24 @@
-from loguru import logger
 from typing import Optional
 
-from .task import PushTask
+from loguru import logger
+
 from stream_notifier.model import BaseModel, from_mapping
 
 from .discord_push import DiscordPush
+from .task import PushTask
 from .telegram_push import TelegramPush
 from .twitter_push import TwitterPush
 
+_push_methods = {
+    "discord": DiscordPush,
+    "telegram": TelegramPush,
+    "twitter": TwitterPush,
+}
 
-class PushConfig(BaseModel):
-    type: from_mapping(
-        {"discord": DiscordPush, "telegram": TelegramPush, "twitter": TwitterPush}
-    )
-    comment: Optional[str]
+
+class PushMethodGeneralConfig(BaseModel):
+    type: from_mapping(_push_methods)
+    comment: Optional[str] = None
 
 
 class Push:
@@ -24,12 +29,12 @@ class Push:
 
         for name, config in push_methods.items():
             # Look up the push module by "type" field
-            push_config = PushConfig.parse_obj(config)
+            push_config = PushMethodGeneralConfig.model_validate(config)
             instance = push_config.type(config)
 
             try:
                 instance.verify()
-            except Exception as err:
+            except Exception:
                 logger.exception(
                     "Got Error during verifying {} ({})",
                     name,
