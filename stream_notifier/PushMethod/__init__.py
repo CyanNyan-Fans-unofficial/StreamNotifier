@@ -31,6 +31,8 @@ class Push:
             # Look up the push module by "type" field
             push_config = PushMethodGeneralConfig.model_validate(config)
             instance = push_config.type(config)
+            self.methods[name] = instance
+            self.comments[name] = push_config.comment or push_config.type.__name__
 
             try:
                 instance.verify()
@@ -40,9 +42,6 @@ class Push:
                     name,
                     push_config.type.__name__,
                 )
-            else:
-                self.methods[name] = instance
-                self.comments[name] = push_config.comment or push_config.type.__name__
 
     def send_push(self, push_contents: dict[str, str], **kwargs):
         logger.info("Notifier callback started")
