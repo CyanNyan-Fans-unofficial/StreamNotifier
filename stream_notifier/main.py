@@ -9,7 +9,49 @@ from .checkers import StreamChecker
 from .PushMethod import Push
 
 
-async def stream_notifier_cli():
+class StreamNotifier:
+    def __init__(self, args):
+        # Load the config meow meow
+        with open(args.path, encoding="utf8") as f:
+            config = safe_load(f)
+
+        # Create push methods
+        push_config = config.pop("push methods")
+        self.push = Push(push_config, test_mode=args.test)
+        self.push_test = args.push_test
+
+        # Initialize stream checkers
+        self.checker_loops = []
+        for name, service_config in config.items():
+            cache_file = None
+            if not args.no_cache:
+                cache_file = pathlib.Path(args.cache_dir) / f"cache-{name}.json"
+            checker = StreamChecker(service_config, self.push, cache_file)
+            logger.info(
+                "Loaded stream checker={}, type={}, test_mode={}",
+                name,
+                checker.config.type,
+                args.test,
+            )
+            self.checker_loops.append(checker.run())
+
+    async def start(self):
+        # Verify push methods
+        await self.push.verify_push()
+        method_names = ", ".join(self.push.methods.keys())
+        logger.info(f"Verified push methods: {method_names}")
+
+        # Push test mode: send push and exit
+        if self.push_test:
+            destination, content = self.push_test
+            await self.push.send_push({destination: content})
+            await self.push.close()
+            return
+
+        await asyncio.gather(*self.checker_loops)
+
+
+def stream_notifier_cli():
     # Parsing arguments from command
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -42,39 +84,5 @@ async def stream_notifier_cli():
         "--no-cache", action="store_true", help="Do not use cache file."
     )
     args = parser.parse_args()
-
-    # Load the config meow meow
-    with open(args.path, encoding="utf8") as f:
-        config = safe_load(f)
-
-    # Verify push methods
-    push_methods_config = config.pop("push methods")
-    push = Push(push_methods_config, test_mode=args.test)
-    await push.verify_push()
-
-    method_names = ", ".join(push.methods.keys())
-    logger.info(f"Verified push methods: {method_names}")
-
-    # Push test mode: send push and exit
-    if args.push_test:
-        destination, content = args.push_test
-        await push.send_push({destination: content})
-        await push.close()
-        return
-
-    # Initialize stream checkers
-    checker_loops = []
-    for name, service_config in config.items():
-        cache_file = None
-        if not args.no_cache:
-            cache_file = pathlib.Path(args.cache_dir) / f"cache-{name}.json"
-        checker = StreamChecker(service_config, push, cache_file)
-        logger.info(
-            "Loaded stream checker={}, type={}, test_mode={}",
-            name,
-            checker.config.type,
-            args.test,
-        )
-        checker_loops.append(checker.run())
-
-    await asyncio.gather(*checker_loops)
+    stream_notifier_instance = StreamNotifier(args)
+    asyncio.run(stream_notifier_instance.start())
