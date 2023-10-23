@@ -1,7 +1,7 @@
 import tweepy
 import tweepy.models
-from pydantic import Field, field_validator
 from loguru import logger
+from pydantic import Field, field_validator
 
 from stream_notifier.model import Color
 from stream_notifier.utils import flatten_dict
