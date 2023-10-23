@@ -74,7 +74,7 @@ class StreamChecker:
 
     async def send_report(self, **kwargs):
         args = {"color": self.instance.config.color} | kwargs
-        self.push.send_report(self.config.report, **args)
+        await self.push.send_report(self.config.report, **args)
 
     async def send_report_http(self, text=None):
         if not self.config.report_url:
@@ -115,7 +115,7 @@ class StreamChecker:
         )
 
         try:
-            self.push.send_push(self.config.push_contents, **info)
+            await self.push.send_push(self.config.push_contents, **info)
         except Exception as e:
             await self.send_report(
                 title="Notification Push failed!❌", desc=f"{type(e).__name__}: {str(e)}"

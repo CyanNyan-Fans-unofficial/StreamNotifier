@@ -15,17 +15,19 @@ class DiscordPush(Push):
             logger.info("Discord webhook url empty, skipping.")
             raise ValueError("Discord webhook url empty, skipping.")
 
-    def verify(self):
+    async def verify(self):
         logger.info("Verification of discord webhook url started.")
 
         response = requests.get(self.webhook_url)
 
         if not response:
-            raise AssertionError(f"Webhook verification failed! Response:\n{pformat(response.json())}")
+            raise AssertionError(
+                f"Webhook verification failed! Response:\n{pformat(response.json())}"
+            )
 
         logger.info("Verification of discord webhook url complete.")
 
-    def send(self, content):
+    async def send(self, content):
         DiscordWebhook(
             url=self.webhook_url,
             content=content,
@@ -34,7 +36,13 @@ class DiscordPush(Push):
 
         logger.info("Notified to discord webhook.")
 
-    def report(self, title="StreamNotifier Status", desc=None, color=None, fields: Union[dict[str, str], None] = None):
+    async def report(
+        self,
+        title="StreamNotifier Status",
+        desc=None,
+        color=None,
+        fields: Union[dict[str, str], None] = None,
+    ):
         embed = DiscordEmbed(title=title, description=desc, color=color)
         embed.set_timestamp()
 

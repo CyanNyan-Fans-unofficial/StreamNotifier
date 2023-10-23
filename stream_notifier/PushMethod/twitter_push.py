@@ -24,13 +24,7 @@ class TwitterPush(Push):
             access_token_secret=self.token_secret,
         )
 
-    def verify(self):
-        logger.info("Verifying Twitter auth is not needed, skipping.")
-
-    def send(self, content):
+    async def send(self, content):
         self.api.create_tweet(text=content)
 
         logger.info("Notified to twitter.")
-
-    def report(self, **kwargs):
-        raise NotImplementedError("Twitter cannot be a valid report destination.")

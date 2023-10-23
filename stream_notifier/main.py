@@ -50,6 +50,7 @@ async def stream_notifier_cli():
     # Verify push methods
     push_methods_config = config.pop("push methods")
     push = Push(push_methods_config, test_mode=args.test)
+    await push.verify_push()
 
     method_names = ", ".join(push.methods.keys())
     logger.info(f"Verified push methods: {method_names}")
@@ -57,7 +58,8 @@ async def stream_notifier_cli():
     # Push test mode: send push and exit
     if args.push_test:
         destination, content = args.push_test
-        push.send_push({destination: content})
+        await push.send_push({destination: content})
+        await push.close()
         return
 
     # Initialize stream checkers

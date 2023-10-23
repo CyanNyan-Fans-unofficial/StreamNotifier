@@ -1,9 +1,9 @@
 from html import escape
 from typing import Union
 
-import telegram
+from aiogram import Bot
+from aiogram.enums import ParseMode
 from loguru import logger
-from telegram.parsemode import ParseMode
 
 from .base import Push
 
@@ -19,27 +19,25 @@ class TelegramPush(Push):
             logger.info("One or more Telegram parameters are empty, skipping.")
             raise ValueError("One or more Telegram parameters are empty, skipping.")
 
-        self.bot = telegram.Bot(token=self.token)
+        self.bot = Bot(token=self.token)
 
-    def verify(self):
+    async def verify(self):
         if self.skip_verify:
             logger.info("Skip telegram token verification")
             return
 
         logger.info("Verification of telegram token started.")
 
-        updates = self.bot.get_updates()
-
-        effective_chats = set()
+        updates = await self.bot.get_updates()
+        chats = set()
 
         # populate set
-        update: telegram.Update
-
         for update in updates:
-            effective_chats.add(update.effective_chat.id)
+            if update.message:
+                chats.add(update.message.chat.id)
 
         # check diff
-        not_found = set(self.chat_ids) - effective_chats
+        not_found = set(self.chat_ids) - chats
 
         if not_found:
             for chat_id in not_found:
@@ -48,26 +46,23 @@ class TelegramPush(Push):
                     chat_id,
                 )
 
-        reachable = len(self.chat_ids) - len(not_found)
         logger.info(
             "Verification of telegram token completed. {} of {} chats are visible.",
-            reachable,
+            len(chats),
             len(self.chat_ids),
         )
 
-    def send(self, content):
+    async def send(self, content):
         for chat_id in self.chat_ids:
             try:
-                message: telegram.Message = self.bot.send_message(
-                    chat_id=chat_id, text=content
-                )
+                message = await self.bot.send_message(chat_id=chat_id, text=content)
                 if self.pin:
-                    self.bot.pin_chat_message(message.chat_id, message.message_id)
+                    await self.bot.pin_chat_message(message.chat.id, message.message_id)
                 logger.info("Notified to telegram channel {}.", chat_id)
             except Exception:
                 logger.exception("Failed to send message or pin: chat id {}.", chat_id)
 
-    def report(
+    async def report(
         self,
         title="StreamNotifier Status",
         desc=None,
@@ -92,8 +87,11 @@ class TelegramPush(Push):
 
         for chat_id in self.chat_ids:
             try:
-                self.bot.send_message(
+                await self.bot.send_message(
                     chat_id, "\n".join(message), parse_mode=ParseMode.HTML
                 )
             except Exception:
                 logger.exception()
+
+    async def close(self):
+        await self.bot.session.close()

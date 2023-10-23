@@ -34,16 +34,18 @@ class Push:
             self.methods[name] = instance
             self.comments[name] = push_config.comment or push_config.type.__name__
 
+    async def verify_push(self):
+        for name, instance in self.methods.items():
             try:
-                instance.verify()
+                await instance.verify()
             except Exception:
                 logger.exception(
                     "Got Error during verifying {} ({})",
                     name,
-                    push_config.type.__name__,
+                    type(instance).__name__,
                 )
 
-    def send_push(self, push_contents: dict[str, str], **kwargs):
+    async def send_push(self, push_contents: dict[str, str], **kwargs):
         logger.info("Notifier callback started")
         if self.test_mode:
             logger.warning("Test mode enabled, will not push to platforms")
@@ -56,7 +58,7 @@ class Push:
             )
 
             try:
-                task.send()
+                await task.send()
             except Exception:
                 logger.exception()
 
@@ -72,7 +74,7 @@ class Push:
 
             yield PushTask(name, comment, module, text, self.test_mode)
 
-    def send_report(self, report_methods, **kwargs):
+    async def send_report(self, report_methods, **kwargs):
         for name in report_methods:
             try:
                 module = self.methods[name]
@@ -84,6 +86,10 @@ class Push:
             params = kwargs
 
             try:
-                module.report(**params)
+                await module.report(**params)
             except Exception:
                 logger.exception()
+
+    async def close(self):
+        for method in self.methods.values():
+            await method.close()

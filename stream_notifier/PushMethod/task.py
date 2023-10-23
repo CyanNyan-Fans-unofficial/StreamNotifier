@@ -6,6 +6,6 @@ class PushTask:
         self.content = content
         self.test_mode = test_mode
 
-    def send(self):
+    async def send(self):
         if not self.test_mode:
-            self.instance.send(self.content)
+            await self.instance.send(self.content)
