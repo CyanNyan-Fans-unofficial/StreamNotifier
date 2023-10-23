@@ -1,3 +1,3 @@
-from .main import stream_notifier_cli
+from .main import StreamNotifier
 
-__all__ = ['stream_notifier_cli']
+__all__ = ["StreamNotifier"]
