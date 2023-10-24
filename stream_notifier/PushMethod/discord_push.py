@@ -47,18 +47,10 @@ class DiscordPush(Push):
         embed.set_timestamp()
 
         if fields:
-            try:
-                for title, value in fields.items():
-                    if value == "":
-                        value = None
-                    embed.add_embed_field(name=title, value=str(value))
-
-            except Exception:
-                logger.exception()
+            for title, value in fields.items():
+                if value == "":
+                    value = None
+                embed.add_embed_field(name=title, value=str(value))
 
         result = DiscordWebhook(self.webhook_url, embeds=[embed]).execute()
-
-        try:
-            result.raise_for_status()
-        except Exception:
-            logger.exception()
+        result.raise_for_status()

@@ -91,7 +91,7 @@ class TelegramPush(Push):
                     chat_id, "\n".join(message), parse_mode=ParseMode.HTML
                 )
             except Exception:
-                logger.exception()
+                logger.exception("Telegram report failed! chat_id: {}", chat_id)
 
     async def close(self):
         await self.bot.session.close()

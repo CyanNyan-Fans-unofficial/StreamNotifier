@@ -60,7 +60,7 @@ class Push:
             try:
                 await task.send()
             except Exception:
-                logger.exception()
+                logger.exception("Push failed for {}!", task.name)
 
     def iter_push_tasks(self, push_contents: dict[str, str], **kwargs):
         for name, content in push_contents.items():
@@ -88,7 +88,7 @@ class Push:
             try:
                 await module.report(**params)
             except Exception:
-                logger.exception()
+                logger.exception("Report failed for {}!", name)
 
     async def close(self):
         for method in self.methods.values():

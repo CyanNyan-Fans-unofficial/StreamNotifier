@@ -120,7 +120,7 @@ class StreamChecker:
             await self.send_report(
                 title="Notification Push failed!❌", desc=f"{type(e).__name__}: {str(e)}"
             )
-            logger.exception(e)
+            logger.exception("Push notification failed!")
 
         return cached_content
 

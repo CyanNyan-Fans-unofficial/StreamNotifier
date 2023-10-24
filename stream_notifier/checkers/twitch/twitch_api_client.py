@@ -136,8 +136,7 @@ class TwitchClient:
     def _check_and_raise_error(req: requests.Response, log_response=True):
         try:
             json_ = req.json()
-        except Exception as err:
-            logger.critical("response: {}\n{}", req, req.text)
+        except Exception:
             logger.exception("Got error parsing JSON, content:\n{}", req.text)
             return False
 
