@@ -60,7 +60,12 @@ class TwitterChecker(CheckerBase):
         flatten_dict(info, "user")
 
         # Use third party service to fix Telegram / Discord preview
-        info.url = f"https://vxtwitter.com/{info.user_screen_name}/status/{info.id}"
+        url_path = f"/{info.user_screen_name}/status/{info.id}"
+        info.url_vxtwitter = f"https://vxtwitter.com{url_path}"
+        info.url_fxtwitter = f"https://fxtwitter.com{url_path}"
+        info.url_twittpr = f"https://twittpr.com{url_path}"
+        info.url_fixupx = f"https://fixupx.com{url_path}"
+        info.url = info.url_fxtwitter
 
         # Prevent Telegram auto-linking @user
         info.text_no_mention = info.full_text.replace("@", "@\u200c")
