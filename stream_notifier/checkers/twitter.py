@@ -9,7 +9,7 @@ from stream_notifier.utils import flatten_dict
 from .base import CheckerBase, CheckerConfig
 
 
-class Config(CheckerConfig):
+class TwitterCheckerConfig(CheckerConfig):
     color: Color = "00acee"
     api_key: str
     api_secret_key: str
@@ -42,8 +42,8 @@ class Config(CheckerConfig):
 
 
 class TwitterChecker(CheckerBase):
-    def __init__(self, config):
-        self.config = Config.model_validate(config)
+    def __init__(self, config: TwitterCheckerConfig):
+        self.config = config
         self.api = self.config.create_client()
         logger.info("Twitter check target: {}", ", ".join(self.config.username))
 

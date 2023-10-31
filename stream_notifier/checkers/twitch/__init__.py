@@ -13,7 +13,7 @@ class PollingApi(BaseModel):
     twitch_app_secret: str
 
 
-class Config(CheckerConfig):
+class TwitchCheckerConfig(CheckerConfig):
     color: Color = "a364fe"
     check_interval: int = 2
     channel_name: str
@@ -26,8 +26,8 @@ class Config(CheckerConfig):
 
 
 class TwitchChecker(CheckerBase):
-    def __init__(self, config):
-        self.config = Config.model_validate(config)
+    def __init__(self, config: TwitchCheckerConfig):
+        self.config = config
         self.client = self.config.create_client()
         logger.info("Target Channel: {}", self.config.channel_name)
 

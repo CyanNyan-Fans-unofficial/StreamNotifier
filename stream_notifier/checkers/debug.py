@@ -8,14 +8,14 @@ from stream_notifier.model import Color
 from .base import CheckerBase, CheckerConfig
 
 
-class Config(CheckerConfig):
+class DebugCheckerConfig(CheckerConfig):
     file: pathlib.Path
     color: Color = "00ff00"
 
 
 class DebugChecker(CheckerBase):
-    def __init__(self, config):
-        self.config = Config.model_validate(config)
+    def __init__(self, config: DebugCheckerConfig):
+        self.config = config
         logger.info("Target File: {}", self.config.file)
 
     async def run_check(self, last_notified):

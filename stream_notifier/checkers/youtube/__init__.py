@@ -8,7 +8,7 @@ from ..base import CheckerBase, CheckerConfig
 from .youtube_api_client import build_client
 
 
-class Config(CheckerConfig):
+class YoutubeCheckerConfig(CheckerConfig):
     color: Color = "ff0000"
     check_interval: int = 10
     client_secret: str
@@ -19,8 +19,8 @@ class Config(CheckerConfig):
 
 
 class YoutubeChecker(CheckerBase):
-    def __init__(self, config):
-        self.config = Config.model_validate(config)
+    def __init__(self, config: YoutubeCheckerConfig):
+        self.config = config
         self.client = self.config.create_client()
         logger.info("Application successfully authorized.")
 

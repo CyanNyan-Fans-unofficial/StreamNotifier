@@ -13,16 +13,16 @@ from stream_notifier.model import BaseModel, from_mapping
 from stream_notifier.PushMethod import Push
 
 from .base import CheckerBase
-from .debug import DebugChecker
-from .twitch import TwitchChecker
-from .twitter import TwitterChecker
-from .youtube import YoutubeChecker
+from .debug import DebugChecker, DebugCheckerConfig
+from .twitch import TwitchChecker, TwitchCheckerConfig
+from .twitter import TwitterChecker, TwitterCheckerConfig
+from .youtube import YoutubeChecker, YoutubeCheckerConfig
 
 _stream_checkers = {
-    "twitch": TwitchChecker,
-    "youtube": YoutubeChecker,
-    "twitter": TwitterChecker,
-    "debug": DebugChecker,
+    "debug": (DebugChecker, DebugCheckerConfig),
+    "twitch": (TwitchChecker, TwitchCheckerConfig),
+    "twitter": (TwitterChecker, TwitterCheckerConfig),
+    "youtube": (YoutubeChecker, YoutubeCheckerConfig),
 }
 
 
@@ -38,7 +38,11 @@ class StreamCheckerGeneralConfig(BaseModel):
 class StreamChecker:
     def __init__(self, config, push: Push, cache_file: pathlib.Path):
         self.config = StreamCheckerGeneralConfig.model_validate(config)
-        self.instance: CheckerBase = self.config.type(config)
+
+        checker_cls, checker_config_cls = self.config.type
+        instance_config = checker_config_cls.model_validate(config)
+        self.instance: CheckerBase = checker_cls(instance_config)
+
         self.push = push
         self.cache = None
         self.cache_file = cache_file
@@ -111,7 +115,7 @@ class StreamChecker:
             return cached_content
 
         await self.send_report(
-            title=f"Stream found for {self.config.type}", fields=summary
+            title=f"Stream found for {type(self.instance).__qualname__}", fields=summary
         )
 
         try:
@@ -135,7 +139,7 @@ class StreamChecker:
                 "Active Report Destination": "\n".join(
                     f"{name}: {self.push.comments[name]}" for name in self.config.report
                 ),
-                "Type": self.config.type.__qualname__,
+                "Type": type(self.instance).__qualname__,
                 "Check Interval": self.interval,
             },
         )
