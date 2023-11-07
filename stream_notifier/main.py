@@ -20,7 +20,7 @@ class StreamNotifier:
         self.push_test = args.push_test
 
         # Initialize stream checkers
-        self.checker_loops = []
+        self.checkers = set()
         for name, service_config in config.items():
             cache_file = None
             if not args.no_cache:
@@ -32,7 +32,7 @@ class StreamNotifier:
                 checker.config.type,
                 args.test,
             )
-            self.checker_loops.append(checker.run())
+            self.checkers.add(checker)
 
     async def start(self):
         # Verify push methods
@@ -47,4 +47,4 @@ class StreamNotifier:
             await self.push.close()
             return
 
-        await asyncio.gather(*self.checker_loops)
+        await asyncio.gather(*(checker.run() for checker in self.checkers))
