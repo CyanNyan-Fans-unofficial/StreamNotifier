@@ -2,12 +2,12 @@ import asyncio
 import json
 import pathlib
 from time import time
-from typing import Optional
+from typing import Any, Optional
 
 from addict import Dict
 from aiohttp import ClientSession, ClientTimeout
 from loguru import logger
-from pydantic import HttpUrl
+from pydantic import Field, HttpUrl
 
 from stream_notifier.model import BaseModel, from_mapping
 from stream_notifier.PushMethod import Push
@@ -15,21 +15,28 @@ from stream_notifier.PushMethod import Push
 from .base import CheckerBase
 from .debug import DebugChecker, DebugCheckerConfig
 from .twitch import TwitchChecker, TwitchCheckerConfig
-from .twitter import TwitterChecker, TwitterCheckerConfig
+from .twitter import (TwitterChecker, TwitterCheckerConfig,
+                      TwitterCheckerPushRule)
 from .youtube import YoutubeChecker, YoutubeCheckerConfig
 
 _stream_checkers = {
-    "debug": (DebugChecker, DebugCheckerConfig),
-    "twitch": (TwitchChecker, TwitchCheckerConfig),
-    "twitter": (TwitterChecker, TwitterCheckerConfig),
-    "youtube": (YoutubeChecker, YoutubeCheckerConfig),
+    "debug": (DebugChecker, DebugCheckerConfig, None),
+    "twitch": (TwitchChecker, TwitchCheckerConfig, None),
+    "twitter": (TwitterChecker, TwitterCheckerConfig, TwitterCheckerPushRule),
+    "youtube": (YoutubeChecker, YoutubeCheckerConfig, None),
 }
+
+
+class StreamCheckerPushRule(BaseModel):
+    contents: dict[str, str]
+    rule: dict[str, Any]
 
 
 class StreamCheckerGeneralConfig(BaseModel):
     type: from_mapping(_stream_checkers)
     report: list[str]
-    push_contents: dict[str, str]
+    push_contents: Optional[dict[str, str]] = None  # Deprecated. Replaced by push_rules
+    push_rules: list[StreamCheckerPushRule] = Field(default_factory=list)
     interval: Optional[float] = None
     report_url: Optional[HttpUrl] = None
     report_interval: int = 20
@@ -39,9 +46,19 @@ class StreamChecker:
     def __init__(self, config, push: Push, cache_file: pathlib.Path):
         self.config = StreamCheckerGeneralConfig.model_validate(config)
 
-        checker_cls, checker_config_cls = self.config.type
+        checker_cls, checker_config_cls, push_rule_cls = self.config.type
         instance_config = checker_config_cls.model_validate(config)
         self.instance: CheckerBase = checker_cls(instance_config)
+
+        self.push_contents = []
+        self.push_rules = []
+        if self.config.push_rules:
+            for rule in self.config.push_rules:
+                self.push_contents.append(rule.contents)
+                self.push_rules.append(push_rule_cls.model_validate(rule.rule))
+        else:
+            self.push_contents.append(self.config.push_contents)
+            self.push_rules.append(self.instance)
 
         self.push = push
         self.cache = None
@@ -102,29 +119,32 @@ class StreamChecker:
         cached_content = self.set_cache(info)
         summary = self.instance.summary(info)
 
-        try:
-            if not self.instance.verify_push(last_notified, info):
-                return cached_content
+        for rule, contents in zip(self.push_rules, self.push_contents):
+            try:
+                if not self.instance.verify_push(rule, last_notified, info):
+                    return cached_content
 
-        except ValueError as e:
+            except Exception as e:
+                await self.send_report(
+                    title="Push notification cancelled!🚫",
+                    desc=f"Reason: {str(e)}",
+                    fields=summary,
+                )
+                continue
+
             await self.send_report(
-                title="Push notification cancelled!🚫",
-                desc=f"Reason: {str(e)}",
+                title=f"Stream found for {type(self.instance).__qualname__}",
                 fields=summary,
             )
-            return cached_content
 
-        await self.send_report(
-            title=f"Stream found for {type(self.instance).__qualname__}", fields=summary
-        )
-
-        try:
-            await self.push.send_push(self.config.push_contents, **info)
-        except Exception as e:
-            await self.send_report(
-                title="Notification Push failed!❌", desc=f"{type(e).__name__}: {str(e)}"
-            )
-            logger.exception("Push notification failed!")
+            try:
+                await self.push.send_push(contents, **info)
+            except Exception as e:
+                await self.send_report(
+                    title="Notification Push failed!❌",
+                    desc=f"{type(e).__name__}: {str(e)}",
+                )
+                logger.exception("Push notification failed!")
 
         return cached_content
 

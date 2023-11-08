@@ -46,7 +46,7 @@ class TwitchChecker(CheckerBase):
     async def process_result(self, info):
         info.link = f"https://www.twitch.tv/{info.user_login}"
 
-    def verify_push(self, last_notified, current_info):
+    def verify_push(self, push_rule, last_notified, current_info):
         if current_info.type != "live":
             return False
 

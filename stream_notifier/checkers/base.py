@@ -19,7 +19,7 @@ class CheckerBase:
 
         return info
 
-    def verify_push(self, last_notified, current_info):
+    def verify_push(self, push_rule, last_notified, current_info):
         """Confirm whether the resource need to trigger a push notification.
 
         Returns:
