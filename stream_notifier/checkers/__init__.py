@@ -93,6 +93,12 @@ class StreamChecker:
     def interval(self):
         return self.config.interval or self.instance.config.check_interval
 
+    @property
+    def active_push_destinations(self):
+        for contents in self.push_contents:
+            for name in contents:
+                yield name
+
     async def send_report(self, **kwargs):
         args = {"color": self.instance.config.color} | kwargs
         await self.push.send_report(self.config.report, **args)
@@ -122,7 +128,7 @@ class StreamChecker:
         for rule, contents in zip(self.push_rules, self.push_contents):
             try:
                 if not self.instance.verify_push(rule, last_notified, info):
-                    return cached_content
+                    continue
 
             except Exception as e:
                 await self.send_report(
@@ -154,7 +160,7 @@ class StreamChecker:
             fields={
                 "Active Push Destination": "\n".join(
                     f"{name}: {self.push.comments[name]}"
-                    for name in self.config.push_contents
+                    for name in self.active_push_destinations
                 ),
                 "Active Report Destination": "\n".join(
                     f"{name}: {self.push.comments[name]}" for name in self.config.report
