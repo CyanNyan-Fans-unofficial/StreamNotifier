@@ -20,7 +20,7 @@ class TwitterCheckerPushRule(BaseModel):
     def convert_username(cls, username):
         if type(username) is str:
             return [username.lower()]
-        return [name.lower() for name in username]
+        return map(str.lower, username)
 
     def match_name(self, screen_name: str) -> bool:
         return screen_name.lower() in self.username
@@ -41,9 +41,6 @@ class TwitterCheckerConfig(CheckerConfig):
             self.access_token_secret,
         )
         return tweepy.API(auth, timeout=5)
-
-    def match_name(self, screen_name: str) -> bool:
-        return screen_name.lower() in self.username
 
 
 class TwitterChecker(CheckerBase):
