@@ -1,54 +1,37 @@
 import asyncio
 import json
 import pathlib
+from importlib import import_module
 from time import time
-from typing import Any, Optional
+from typing import Literal
 
 from addict import Dict
 from aiohttp import ClientSession, ClientTimeout
 from loguru import logger
-from pydantic import Field, HttpUrl
+from pydantic import validate_call
 
-from stream_notifier.model import BaseModel, from_mapping
 from stream_notifier.PushMethod import Push
 
-from .base import CheckerBase
-from .debug import DebugChecker, DebugCheckerConfig
-from .twitch import TwitchChecker, TwitchCheckerConfig
-from .twitter import (TwitterChecker, TwitterCheckerConfig,
-                      TwitterCheckerPushRule)
-from .youtube import YoutubeChecker, YoutubeCheckerConfig
 
-_stream_checkers = {
-    "debug": (DebugChecker, DebugCheckerConfig, None),
-    "twitch": (TwitchChecker, TwitchCheckerConfig, None),
-    "twitter": (TwitterChecker, TwitterCheckerConfig, TwitterCheckerPushRule),
-    "youtube": (YoutubeChecker, YoutubeCheckerConfig, None),
-}
-
-
-class StreamCheckerPushRule(BaseModel):
-    contents: dict[str, str]
-    rule: dict[str, Any]
-
-
-class StreamCheckerGeneralConfig(BaseModel):
-    type: from_mapping(_stream_checkers)
-    report: list[str]
-    push_contents: Optional[dict[str, str]] = None  # Deprecated. Replaced by push_rules
-    push_rules: list[StreamCheckerPushRule] = Field(default_factory=list)
-    interval: Optional[float] = None
-    report_url: Optional[HttpUrl] = None
-    report_interval: int = 20
+@validate_call
+def import_checker(checker_type: Literal["debug", "twitch", "twitter", "youtube"]):
+    base = "".join(word.capitalize() for word in checker_type.split("_"))
+    module = import_module(f".{checker_type}", __name__)
+    return (
+        getattr(module, f"{base}Checker"),
+        getattr(module, f"{base}CheckerConfig"),
+        getattr(module, f"{base}CheckerPushRule", None),
+    )
 
 
 class StreamChecker:
     def __init__(self, config, push: Push, cache_file: pathlib.Path):
-        self.config = StreamCheckerGeneralConfig.model_validate(config)
+        checker_cls, checker_config_cls, push_rule_cls = import_checker(
+            config.pop("type")
+        )
 
-        checker_cls, checker_config_cls, push_rule_cls = self.config.type
-        instance_config = checker_config_cls.model_validate(config)
-        self.instance: CheckerBase = checker_cls(instance_config)
+        self.config = checker_config_cls.model_validate(config)
+        self.instance = checker_cls(self.config)
 
         self.push_contents = []
         self.push_rules = []

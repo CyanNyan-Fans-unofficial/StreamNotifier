@@ -29,7 +29,7 @@ class StreamNotifier:
             logger.info(
                 "Loaded stream checker={}, type={}, test_mode={}",
                 name,
-                checker.config.type,
+                type(checker.instance).__qualname__,
                 args.test,
             )
             self.checkers.add(checker)

@@ -1,9 +1,24 @@
+from typing import Any, Optional
+
+from pydantic import Field, HttpUrl
+
 from stream_notifier.model import BaseModel, Color
+
+
+class StreamCheckerPushRule(BaseModel):
+    contents: dict[str, str]
+    rule: dict[str, Any]
 
 
 class CheckerConfig(BaseModel):
     color: Color = 0
     check_interval: int = 10
+    report: list[str]
+    push_contents: Optional[dict[str, str]] = None  # Deprecated. Replaced by push_rules
+    push_rules: list[StreamCheckerPushRule] = Field(default_factory=list)
+    interval: Optional[float] = None
+    report_url: Optional[HttpUrl] = None
+    report_interval: int = 20
 
 
 class CheckerBase:
