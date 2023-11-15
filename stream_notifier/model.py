@@ -13,6 +13,11 @@ class BaseModel(PydanticBaseModel):
     )
 
 
+class PushContext(PydanticBaseModel):
+    type: str
+    data: dict
+
+
 # Convert string color value to RGB integer
 Color = Annotated[
     str,

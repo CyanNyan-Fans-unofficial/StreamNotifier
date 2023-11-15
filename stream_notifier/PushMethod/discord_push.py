@@ -27,7 +27,8 @@ class DiscordPush(Push):
 
         logger.info("Verification of discord webhook url complete.")
 
-    async def send(self, content):
+    async def send(self, content, context):
+        logger.info(context)
         DiscordWebhook(
             url=self.webhook_url,
             content=content,

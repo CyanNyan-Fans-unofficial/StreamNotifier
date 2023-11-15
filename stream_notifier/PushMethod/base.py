@@ -11,7 +11,7 @@ class Push:
     async def verify(self):
         pass
 
-    async def send(self, content: str):
+    async def send(self, content: str, context):
         """Formats text with contents and sends to respective platforms.
 
         Additional formatting variables can be provided as keyword arguments."""

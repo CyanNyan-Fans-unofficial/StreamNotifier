@@ -52,7 +52,7 @@ class TelegramPush(Push):
             len(self.chat_ids),
         )
 
-    async def send(self, content):
+    async def send(self, content, context):
         for chat_id in self.chat_ids:
             try:
                 message = await self.bot.send_message(chat_id=chat_id, text=content)

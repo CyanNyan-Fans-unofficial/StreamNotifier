@@ -11,6 +11,7 @@ from loguru import logger
 from pydantic import validate_call
 
 from stream_notifier.PushMethod import Push
+from stream_notifier.model import PushContext
 
 
 @validate_call
@@ -26,9 +27,8 @@ def import_checker(checker_type: Literal["debug", "twitch", "twitter", "youtube"
 
 class StreamChecker:
     def __init__(self, config, push: Push, cache_file: pathlib.Path):
-        checker_cls, checker_config_cls, push_rule_cls = import_checker(
-            config.pop("type")
-        )
+        self.type = config.pop("type")
+        checker_cls, checker_config_cls, push_rule_cls = import_checker(self.type)
 
         self.config = checker_config_cls.model_validate(config)
         self.instance = checker_cls(self.config)
@@ -127,7 +127,8 @@ class StreamChecker:
             )
 
             try:
-                await self.push.send_push(contents, **info)
+                context = PushContext(type=self.type, data=info)
+                await self.push.send_push(contents, context, **info)
             except Exception as e:
                 await self.send_report(
                     title="Notification Push failed!❌",

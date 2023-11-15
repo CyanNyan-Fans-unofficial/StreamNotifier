@@ -24,7 +24,7 @@ class TwitterPush(Push):
             access_token_secret=self.token_secret,
         )
 
-    async def send(self, content):
+    async def send(self, content, context):
         self.api.create_tweet(text=content)
 
         logger.info("Notified to twitter.")

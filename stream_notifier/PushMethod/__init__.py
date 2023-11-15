@@ -45,12 +45,12 @@ class Push:
                     type(instance).__name__,
                 )
 
-    async def send_push(self, push_contents: dict[str, str], **kwargs):
+    async def send_push(self, push_contents: dict[str, str], context=None, **kwargs):
         logger.info("Notifier callback started")
         if self.test_mode:
             logger.warning("Test mode enabled, will not push to platforms")
 
-        for task in self.iter_push_tasks(push_contents, **kwargs):
+        for task in self.iter_push_tasks(push_contents, context, **kwargs):
             logger.info(
                 "Pushing for {} ({})",
                 task.name,
@@ -62,7 +62,7 @@ class Push:
             except Exception:
                 logger.exception("Push failed for {}!", task.name)
 
-    def iter_push_tasks(self, push_contents: dict[str, str], **kwargs):
+    def iter_push_tasks(self, push_contents: dict[str, str], context, **kwargs):
         for name, content in push_contents.items():
             text = content.format(**kwargs)
             try:
@@ -72,7 +72,7 @@ class Push:
                 logger.warning("Push method {} is not configured! Skipping.", name)
                 continue
 
-            yield PushTask(name, comment, module, text, self.test_mode)
+            yield PushTask(name, comment, module, text, context, self.test_mode)
 
     async def send_report(self, report_methods, **kwargs):
         for name in report_methods:
