@@ -15,7 +15,7 @@ class StreamNotifier:
             config = safe_load(f)
 
         # Create push methods
-        push_config = config.pop("push methods")
+        push_config = config.pop("push methods", {})
         self.push = Push(push_config, test_mode=args.test)
         self.push_test = args.push_test
 

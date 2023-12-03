@@ -13,8 +13,9 @@ class StreamCheckerPushRule(BaseModel):
 class CheckerConfig(BaseModel):
     color: Color = 0
     check_interval: int = 10
-    report: list[str]
-    push_contents: Optional[dict[str, str]] = None  # Deprecated. Replaced by push_rules
+    report: Optional[list[str]] = Field(default_factory=list)
+    # Deprecated. Replaced by push_rules
+    push_contents: Optional[dict[str, str]] = Field(default_factory=dict)
     push_rules: list[StreamCheckerPushRule] = Field(default_factory=list)
     interval: Optional[float] = None
     report_url: Optional[HttpUrl] = None
